@@ -9,25 +9,27 @@ State (what has been sent) lives in MongoDB, so restarts never double-post.
 
 ## Daily timetable (IST)
 
-| Time | What |
-|---|---|
-| 05:30 | Builds the current-affairs digest (not posted) |
-| 07:00 | Digest: 3 stories, GS paper tag, source link |
-| 10:00, 16:30, 21:00 | A quiz poll from `data/quiz.json` (change with `QUIZ_TIMES`) |
-| 12:30 | Tip (calendar) |
-| 15:00 | Concept in 60 seconds (calendar) |
-| 17:30 | Product or blog post (calendar) |
-| 20:30 | Data fact (calendar) |
-| Sunday 18:00 | Weekly recap of the week's digests, grouped by GS paper |
+Everything below runs on its own. Nothing needs refilling.
 
-Quiz questions come from UPSC Prelims 2024 GS Paper I (Series A). Every answer was checked against UPSC's official key. Questions UPSC dropped, or whose answer differed from the key in our first transcription, are not in the file.
+| Time | What | Where it comes from |
+|---|---|---|
+| 05:30 | Builds the current-affairs digest (not posted) | PIB, The Hindu, Indian Express feeds + Groq |
+| 07:00 | Current-affairs digest: 3 stories, GS tag, source link | as above |
+| 10:00 | A quiz poll | `data/quiz.json`, 77 questions checked against UPSC's official key, then loops |
+| 12:30 | A tip | `content/pools/tips.json`, 29 tips, then loops |
+| 15:00 | Concept in 60 seconds | 14 hand-written, then ~98 topics written from Wikipedia summaries, number-checked |
+| 17:30 | A product or blog post | `content/pools/promos.json`, 12 posts, then loops |
+| 20:30 | A data fact | Computed from the toppers database, so it is always accurate |
+| Sunday 18:00 | Weekly recap of the week's digests, by GS paper | the saved digests |
+
+`QUIZ_TIMES` (comma-separated, default `10:00`; empty turns quizzes off) sets the quiz times. Each slot takes the next item of its pool, tracked in MongoDB, so it never repeats until the pool is used up. Calendar posts in `content/*.json` (an id, an IST time, the text) still work for one-off announcements.
 
 ## How a day works
 
 1. 05:30 IST: the worker fetches the feeds, asks Groq to pick the three most exam-relevant stories, fetches each article's text and asks for a two-sentence note using only that text. Each note must be two short sentences, free of filler, and every number in it must appear in the source text. A digest that cannot reach three clean items is discarded and logged as `failed`, and nothing is posted. At most two items come from PIB, and stories posted in the last four days are skipped.
 2. The three items are also saved to the `ca_daily` collection. The website can turn a week of them into a weekly roundup page.
 3. 07:00 IST: the digest is posted.
-4. Calendar posts go out at their own times. A post more than six hours late is skipped, not sent.
+4. A slot stays open for two hours, so a restart still catches it. After that it is skipped.
 
 ## Run it
 

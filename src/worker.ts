@@ -6,6 +6,7 @@ import { sendToChannel, sendPhotoToChannel } from "./telegram";
 import { buildDailyCA } from "./daily-ca";
 import { postQuiz } from "./quiz";
 import { postRecap } from "./recap";
+import { runSlots } from "./slots";
 
 /**
  * Runs on the VPS. Every minute it posts whatever is due:
@@ -30,13 +31,15 @@ function loadPlan(): Planned[] {
   return readdirSync(dir).filter((f) => f.endsWith(".json")).flatMap((f) => JSON.parse(readFileSync(join(dir, f), "utf8")) as Planned[]);
 }
 
-const QUIZ_TIMES = (process.env.QUIZ_TIMES || "10:00,16:30,21:00").split(",").map((t) => t.trim());
+const QUIZ_TIMES = (process.env.QUIZ_TIMES ?? "10:00").split(",").map((t) => t.trim()).filter(Boolean);
 const RECAP_TIME = process.env.RECAP_TIME || "18:00";
 
 async function tick() {
   const col = mongoose.connection.db!.collection("tg_posts");
   const now = new Date();
-  const { date, hm } = istParts(now);
+  const parts = istParts(now);
+  const date = parts.date;
+  const hm = process.env.DRY_RUN === "1" && process.env.TEST_HM ? process.env.TEST_HM : parts.hm; // TEST_HM only applies in dry runs
 
   // 1. Posts written in advance.
   for (const p of loadPlan()) {
@@ -69,6 +72,9 @@ async function tick() {
       log("FAILED", id, String(e));
     }
   }
+
+  // 1b2. Tip, concept, promo and data-fact slots.
+  await runSlots(date, hm, now, log);
 
   // 1c. Sunday recap of the week's digests.
   const dow = new Intl.DateTimeFormat("en-US", { timeZone: IST, weekday: "short" }).format(now);
