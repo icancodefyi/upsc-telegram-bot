@@ -32,3 +32,19 @@ export async function sendPhotoToChannel(photoUrl: string, caption: string): Pro
   if (!j.ok) throw new Error(`telegram: ${j.description}`);
   return j.result!.message_id;
 }
+
+/** Posts a quiz-mode poll. Telegram limits: question 300 chars, options 100, explanation 200. */
+export async function sendQuizPoll(question: string, options: string[], correct: number, explanation?: string): Promise<number> {
+  if (process.env.DRY_RUN === "1") {
+    console.log(`[DRY_RUN] would post quiz poll:\n${question}\n${options.map((o, i) => `  ${"ABCD"[i]}) ${o}${i === correct ? "   <- correct" : ""}`).join("\n")}\n  explanation: ${explanation ?? "(none)"}\n`);
+    return 0;
+  }
+  const res = await fetch(`https://api.telegram.org/bot${TOKEN()}/sendPoll`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ chat_id: CHANNEL(), question, options, type: "quiz", correct_option_id: correct, is_anonymous: true, ...(explanation ? { explanation } : {}) }),
+  });
+  const j = (await res.json()) as { ok: boolean; description?: string; result?: { message_id: number } };
+  if (!j.ok) throw new Error(`telegram: ${j.description}`);
+  return j.result!.message_id;
+}

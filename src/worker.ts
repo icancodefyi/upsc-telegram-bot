@@ -4,6 +4,8 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { sendToChannel, sendPhotoToChannel } from "./telegram";
 import { buildDailyCA } from "./daily-ca";
+import { postQuiz } from "./quiz";
+import { postRecap } from "./recap";
 
 /**
  * Runs on the VPS. Every minute it posts whatever is due:
@@ -19,12 +21,17 @@ const istParts = (d = new Date()) => {
   const g = (t: string) => f.find((p) => p.type === t)!.value;
   return { date: `${g("year")}-${g("month")}-${g("day")}`, hm: `${g("hour")}:${g("minute")}` };
 };
+/** "10:00" plus three hours is "13:00". Slots stay open for a short window so a restart still catches them. */
+const addHours = (hm: string, h: number) => `${String(Math.min(23, Number(hm.slice(0, 2)) + h)).padStart(2, "0")}:${hm.slice(3)}`;
 const log = (...a: unknown[]) => console.log(new Date().toISOString(), ...a);
 
 function loadPlan(): Planned[] {
   const dir = join(process.cwd(), "content");
   return readdirSync(dir).filter((f) => f.endsWith(".json")).flatMap((f) => JSON.parse(readFileSync(join(dir, f), "utf8")) as Planned[]);
 }
+
+const QUIZ_TIMES = (process.env.QUIZ_TIMES || "10:00,16:30,21:00").split(",").map((t) => t.trim());
+const RECAP_TIME = process.env.RECAP_TIME || "18:00";
 
 async function tick() {
   const col = mongoose.connection.db!.collection("tg_posts");
@@ -44,6 +51,39 @@ async function tick() {
     } catch (e) {
       await col.updateOne({ _id: p.id as never }, { $set: { status: "failed", error: String(e).slice(0, 300) } });
       log("FAILED", p.id, String(e));
+    }
+  }
+
+  // 1b. Quiz polls, a few times a day. Each slot is claimed once per day.
+  for (const t of QUIZ_TIMES) {
+    if (hm < t || hm >= addHours(t, 3)) continue;
+    const id = `quiz-${date}-${t}`;
+    const claim = await col.updateOne({ _id: id as never }, { $setOnInsert: { status: "sending", at: now } }, { upsert: true });
+    if (claim.upsertedCount === 0) continue;
+    try {
+      const qid = await postQuiz(mongoose.connection.db!.collection("quiz_state"));
+      await col.updateOne({ _id: id as never }, { $set: { status: "sent", question: qid, sentAt: new Date() } });
+      log("sent", id, qid);
+    } catch (e) {
+      await col.updateOne({ _id: id as never }, { $set: { status: "failed", error: String(e).slice(0, 300) } });
+      log("FAILED", id, String(e));
+    }
+  }
+
+  // 1c. Sunday recap of the week's digests.
+  const dow = new Intl.DateTimeFormat("en-US", { timeZone: IST, weekday: "short" }).format(now);
+  if ((dow === "Sun" || process.env.FORCE_RECAP === "1") && hm >= RECAP_TIME && hm < addHours(RECAP_TIME, 3)) {
+    const id = `recap-${date}`;
+    const claim = await col.updateOne({ _id: id as never }, { $setOnInsert: { status: "sending", at: now } }, { upsert: true });
+    if (claim.upsertedCount === 1) {
+      try {
+        const posted = await postRecap(mongoose.connection.db!.collection("ca_daily"), date);
+        await col.updateOne({ _id: id as never }, { $set: { status: posted ? "sent" : "skipped", sentAt: new Date() } });
+        log(posted ? "sent" : "skipped (too few digests)", id);
+      } catch (e) {
+        await col.updateOne({ _id: id as never }, { $set: { status: "failed", error: String(e).slice(0, 300) } });
+        log("FAILED", id, String(e));
+      }
     }
   }
 

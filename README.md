@@ -7,6 +7,21 @@ A small worker that runs a UPSC Telegram channel on its own:
 
 State (what has been sent) lives in MongoDB, so restarts never double-post.
 
+## Daily timetable (IST)
+
+| Time | What |
+|---|---|
+| 05:30 | Builds the current-affairs digest (not posted) |
+| 07:00 | Digest: 3 stories, GS paper tag, source link |
+| 10:00, 16:30, 21:00 | A quiz poll from `data/quiz.json` (change with `QUIZ_TIMES`) |
+| 12:30 | Tip (calendar) |
+| 15:00 | Concept in 60 seconds (calendar) |
+| 17:30 | Product or blog post (calendar) |
+| 20:30 | Data fact (calendar) |
+| Sunday 18:00 | Weekly recap of the week's digests, grouped by GS paper |
+
+Quiz questions come from UPSC Prelims 2024 GS Paper I (Series A). Every answer was checked against UPSC's official key. Questions UPSC dropped, or whose answer differed from the key in our first transcription, are not in the file.
+
 ## How a day works
 
 1. 05:30 IST: the worker fetches the feeds, asks Groq to pick the three most exam-relevant stories, fetches each article's text and asks for a two-sentence note using only that text. Each note must be two short sentences, free of filler, and every number in it must appear in the source text. A digest that cannot reach three clean items is discarded and logged as `failed`, and nothing is posted. At most two items come from PIB, and stories posted in the last four days are skipped.

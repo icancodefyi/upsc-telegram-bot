@@ -1,0 +1,1080 @@
+[
+ {
+  "id": "p24-1",
+  "qno": 1,
+  "subject": "Geography",
+  "text": "Consider the following statements:\nStatement-I: The atmosphere is heated more by incoming solar radiation than by terrestrial radiation.\nStatement-II: Carbon dioxide and other greenhouse gases in the atmosphere are good absorbers of long wave radiation.\nWhich one of the following is correct in respect of the above statements?",
+  "options": [
+   "Both Statement-I and Statement-II are correct and Statement-II explains Statement-I",
+   "Both Statement-I and Statement-II are correct, but Statement-II does not explain Statement-I",
+   "Statement-I is correct, but Statement-II is incorrect",
+   "Statement-I is incorrect, but Statement-II is correct"
+  ],
+  "answer": 3,
+  "explain": "The atmosphere lets most short-wave sunlight pass through and is heated mainly from below, by long-wave radiation from the Earth. So Statement-I is wrong. Statement-II is right: CO₂ and other greenhouse gases absorb that long-wave radiation."
+ },
+ {
+  "id": "p24-6",
+  "qno": 6,
+  "subject": "Geography",
+  "text": "With reference to the Himalayan rivers joining the Ganga downstream of Prayagraj from West to East, which one of the following sequences is correct?",
+  "options": [
+   "Ghaghara — Gomati — Gandak — Kosi",
+   "Gomati — Ghaghara — Gandak — Kosi",
+   "Ghaghara — Gomati — Kosi — Gandak",
+   "Gomati — Ghaghara — Kosi — Gandak"
+  ],
+  "answer": 1,
+  "explain": "Going east from Prayagraj: the Gomati joins near Ghazipur, the Ghaghara near Chhapra, the Gandak opposite Patna (at Hajipur) and the Kosi near Kursela in Bihar."
+ },
+ {
+  "id": "p24-14",
+  "qno": 14,
+  "subject": "Geography",
+  "text": "With reference to “Coriolis force”, which of the following statements is/are correct?\n1. It increases with increase in wind velocity.\n2. It is maximum at the poles and is absent at the equator.\nSelect the answer using the code given below:",
+  "options": [
+   "1 only",
+   "2 only",
+   "Both 1 and 2",
+   "Neither 1 nor 2"
+  ],
+  "answer": 2,
+  "explain": "The Coriolis force grows with wind speed and with latitude: it is greatest at the poles and zero at the equator. Both statements are correct."
+ },
+ {
+  "id": "p24-21",
+  "qno": 21,
+  "subject": "Environment",
+  "text": "The organisms “Cicada, Froghopper and Pond skater” are:",
+  "options": [
+   "Birds",
+   "Fish",
+   "Insects",
+   "Reptiles"
+  ],
+  "answer": 2,
+  "explain": "All three are insects. Cicadas and froghoppers are true bugs that feed on plant sap, and pond skaters walk on the surface of still water."
+ },
+ {
+  "id": "p24-22",
+  "qno": 22,
+  "subject": "Environment",
+  "text": "Consider the following statements:\nStatement-I: Many chewing gums found in the market are considered a source of environmental pollution.\nStatement-II: Many chewing gums contain plastic as gum base.\nWhich one of the following is correct in respect of the above statements?",
+  "options": [
+   "Both Statement-I and Statement-II are correct and Statement-II explains Statement-I",
+   "Both Statement-I and Statement-II are correct, but Statement-II does not explain Statement-I",
+   "Statement-I is correct, but Statement-II is incorrect",
+   "Statement-I is incorrect, but Statement-II is correct"
+  ],
+  "answer": 0,
+  "explain": "Most modern gum bases are synthetic polymers, a kind of plastic that doesn't break down. That is exactly why discarded gum counts as plastic pollution, so Statement-II explains Statement-I."
+ },
+ {
+  "id": "p24-23",
+  "qno": 23,
+  "subject": "Environment",
+  "text": "Consider the following pairs (Country — Animal found in its natural habitat):\n1. Brazil — Indri\n2. Indonesia — Elk\n3. Madagascar — Bonobo\nHow many of the pairs given above are correctly matched?",
+  "options": [
+   "Only one",
+   "Only two",
+   "All three",
+   "None"
+  ],
+  "answer": 3,
+  "explain": "None match. The indri is a lemur found only in Madagascar, elk live in North America and northern Eurasia (not Indonesia), and the bonobo is found only in the Democratic Republic of the Congo."
+ },
+ {
+  "id": "p24-24",
+  "qno": 24,
+  "subject": "International",
+  "text": "Consider the following statements regarding World Toilet Organization:\n1. It is one of the agencies of the United Nations.\n2. World Toilet Summit, World Toilet Day and World Toilet College are the initiatives of this organization, to inspire action to tackle the global sanitation crisis.\n3. The main focus of its function is to grant funds to the least developed countries and developing countries to achieve the end of open defecation.\nWhich of the statements given above is/are correct?",
+  "options": [
+   "2 only",
+   "3 only",
+   "1 and 2",
+   "2 and 3"
+  ],
+  "answer": 0,
+  "explain": "The World Toilet Organization is a non-profit founded in Singapore in 2001, not a UN agency, and it campaigns rather than giving grants. It started the World Toilet Summit, World Toilet Day and World Toilet College."
+ },
+ {
+  "id": "p24-25",
+  "qno": 25,
+  "subject": "Environment",
+  "text": "Consider the following statements:\n1. Lions do not have a particular breeding season.\n2. Unlike most other big cats, cheetahs do not roar.\n3. Unlike male lions, male leopards do not proclaim their territory by scent marking.\nWhich of the statements given above are correct?",
+  "options": [
+   "1 and 2 only",
+   "2 and 3 only",
+   "1 and 3 only",
+   "1, 2 and 3"
+  ],
+  "answer": 0,
+  "explain": "Lions can breed at any time of year, and cheetahs can't roar (they purr, chirp and growl). Male leopards do mark their territory with scent, so statement 3 is wrong."
+ },
+ {
+  "id": "p24-43",
+  "qno": 43,
+  "subject": "Economy",
+  "text": "In India, which of the following can trade in Corporate Bonds and Government Securities?\n1. Insurance Companies\n2. Pension Funds\n3. Retail Investors\nSelect the correct answer using the code given below:",
+  "options": [
+   "1 and 2 only",
+   "2 and 3 only",
+   "1 and 3 only",
+   "1, 2 and 3"
+  ],
+  "answer": 3,
+  "explain": "All three can. Insurers and pension funds are large holders of both, and retail investors can buy government securities through RBI Retail Direct and corporate bonds on stock exchanges."
+ },
+ {
+  "id": "p24-44",
+  "qno": 44,
+  "subject": "Economy",
+  "text": "Consider the following:\n1. Exchange-Traded Funds (ETF)\n2. Motor vehicles\n3. Currency swap\nWhich of the above is/are considered financial instruments?",
+  "options": [
+   "1 only",
+   "2 and 3 only",
+   "1, 2 and 3",
+   "1 and 3 only"
+  ],
+  "answer": 3,
+  "explain": "ETFs and currency swaps are financial contracts that can be traded. A motor vehicle is a physical asset, not a financial instrument."
+ },
+ {
+  "id": "p24-45",
+  "qno": 45,
+  "subject": "Economy",
+  "text": "With reference to the sectors of the Indian economy, consider the following pairs (Economic activity — Sector):\n1. Storage of agricultural produce — Secondary\n2. Dairy farm — Primary\n3. Mineral exploration — Tertiary\n4. Weaving cloth — Secondary\nHow many of the pairs given above are correctly matched?",
+  "options": [
+   "Only one",
+   "Only two",
+   "Only three",
+   "All four"
+  ],
+  "answer": 1,
+  "explain": "Dairy (primary) and weaving (secondary) are right. Storage is a service, so tertiary, and mineral exploration is part of extraction, so primary."
+ },
+ {
+  "id": "p24-46",
+  "qno": 46,
+  "subject": "Environment",
+  "text": "Consider the following materials:\n1. Agricultural residues\n2. Corn grain\n3. Wastewater treatment sludge\n4. Wood mill waste\nWhich of the above can be used as feedstock for producing Sustainable Aviation Fuel?",
+  "options": [
+   "1 and 2 only",
+   "3 and 4 only",
+   "1, 2, 3 and 4",
+   "1, 3 and 4 only"
+  ],
+  "answer": 2,
+  "explain": "All four. Sustainable Aviation Fuel can be made from crop residues, from corn via ethanol, from sewage sludge and from wood waste."
+ },
+ {
+  "id": "p24-59",
+  "qno": 59,
+  "subject": "International",
+  "text": "Consider the following statements:\n1. India is a member of the International Grains Council.\n2. A country needs to be a member of the International Grains Council for exporting or importing rice and wheat.\nWhich of the statements given above is/are correct?",
+  "options": [
+   "1 only",
+   "2 only",
+   "Both 1 and 2",
+   "Neither 1 nor 2"
+  ],
+  "answer": 0,
+  "explain": "India is a member of the International Grains Council. Membership isn't required to trade grain, so statement 2 is wrong."
+ },
+ {
+  "id": "p24-60",
+  "qno": 60,
+  "subject": "History & Culture",
+  "text": "Which one of the following was the latest inclusion in the Intangible Cultural Heritage List of UNESCO?",
+  "options": [
+   "Chhau dance",
+   "Durga puja",
+   "Garba dance",
+   "Kumbh mela"
+  ],
+  "answer": 2,
+  "explain": "Garba of Gujarat was added in December 2023. Durga Puja in Kolkata was added in 2021, Kumbh Mela in 2017 and Chhau dance in 2010."
+ },
+ {
+  "id": "p24-61",
+  "qno": 61,
+  "subject": "Polity",
+  "text": "Who was the Provisional President of the Constituent Assembly before Dr. Rajendra Prasad took over?",
+  "options": [
+   "C. Rajagopalachari",
+   "Dr. B.R. Ambedkar",
+   "T.T. Krishnamachari",
+   "Dr. Sachchidananda Sinha"
+  ],
+  "answer": 3,
+  "explain": "Dr. Sachchidananda Sinha, the oldest member, chaired the first meeting on 9 December 1946. Dr. Rajendra Prasad was elected President on 11 December."
+ },
+ {
+  "id": "p24-62",
+  "qno": 62,
+  "subject": "Polity",
+  "text": "With reference to the Government of India Act, 1935, consider the following statements:\n1. It provided for the establishment of an All India Federation based on the union of the British Indian Provinces and Princely States.\n2. Defence and Foreign Affairs were kept under the control of the federal legislature.\nWhich of the statements given above is/are correct?",
+  "options": [
+   "1 only",
+   "2 only",
+   "Both 1 and 2",
+   "Neither 1 nor 2"
+  ],
+  "answer": 0,
+  "explain": "The Act proposed an All India Federation of provinces and princely states (it never came into being). Defence and foreign affairs were 'reserved' subjects under the Governor-General, not the federal legislature."
+ },
+ {
+  "id": "p24-63",
+  "qno": 63,
+  "subject": "History & Culture",
+  "text": "Which one of the following is a work attributed to playwright Bhasa?",
+  "options": [
+   "Kavyalankara",
+   "Natyashastra",
+   "Madhyama-vyayoga",
+   "Mahabhashya"
+  ],
+  "answer": 2,
+  "explain": "Bhasa wrote Madhyama-vyayoga (and Svapnavasavadattam). The Natyashastra is by Bharata, the Mahabhashya by Patanjali and the Kavyalankara by Bhamaha."
+ },
+ {
+  "id": "p24-64",
+  "qno": 64,
+  "subject": "History & Culture",
+  "text": "Sanghabhuti, an Indian Buddhist monk, who travelled to China at the end of the fourth century AD, was the author of a commentary on:",
+  "options": [
+   "Prajnaparamita Sutra",
+   "Visuddhimagga",
+   "Sarvastivada Vinaya",
+   "Lalitavistara"
+  ],
+  "answer": 2,
+  "explain": "Sanghabhuti, a monk from Kashmir, reached China around 381 AD and wrote a commentary on the Sarvastivada Vinaya, the monastic rules of the Sarvastivada school."
+ },
+ {
+  "id": "p24-79",
+  "qno": 79,
+  "subject": "Geography",
+  "text": "The longest border between any two countries in the world is between:",
+  "options": [
+   "Canada and the United States of America",
+   "Chile and Argentina",
+   "China and India",
+   "Kazakhstan and Russian Federation"
+  ],
+  "answer": 0,
+  "explain": "The Canada–USA border, including Alaska, runs about 8,890 km, the longest in the world. Kazakhstan–Russia (about 7,600 km) comes second."
+ },
+ {
+  "id": "p24-81",
+  "qno": 81,
+  "subject": "Polity",
+  "text": "Consider the following statements regarding 'Nari Shakti Vandan Adhiniyam':\n1. Provisions will come into effect from the 18th Lok Sabha.\n2. This will be in force for 15 years after becoming an Act.\n3. There are provisions for the reservation of seats for Scheduled Castes Women within the quota reserved for the Scheduled Castes.\nWhich of the statements given above are correct?",
+  "options": [
+   "1, 2 and 3",
+   "1 and 2 only",
+   "2 and 3 only",
+   "1 and 3 only"
+  ],
+  "answer": 2,
+  "explain": "The women's reservation starts only after the first census and delimitation that follow the Act, not from the 18th Lok Sabha. It lasts 15 years and reserves seats for SC and ST women within their quotas."
+ },
+ {
+  "id": "p24-82",
+  "qno": 82,
+  "subject": "International",
+  "text": "Which of the following statements about 'Exercise Mitra Shakti-2023' are correct?\n1. This was a joint military exercise between India and Bangladesh.\n2. It commenced in Aundh (Pune).\n3. Joint response during counter-terrorism operations was a goal of this operation.\n4. Indian Air Force was a part of this exercise.\nSelect the answer using the code given below:",
+  "options": [
+   "1, 2 and 3",
+   "1, 2 and 4",
+   "1, 3 and 4",
+   "2, 3 and 4"
+  ],
+  "answer": 3,
+  "explain": "Mitra Shakti is an India–Sri Lanka exercise, not India–Bangladesh. The 2023 edition began at Aundh, Pune, focused on counter-terrorism operations, and the Indian Air Force took part."
+ },
+ {
+  "id": "p24-97",
+  "qno": 97,
+  "subject": "International",
+  "text": "Consider the following statements:\nStatement-I: Recently, Venezuela has achieved a rapid recovery from its economic crisis and succeeded in preventing its people from fleeing/emigrating to other countries.\nStatement-II: Venezuela has the world's largest oil reserves.\nWhich one of the following is correct in respect of the above statements?",
+  "options": [
+   "Both Statement-I and Statement-II are correct and Statement-II explains Statement-I",
+   "Both Statement-I and Statement-II are correct, but Statement-II does not explain Statement-I",
+   "Statement-I is correct, but Statement-II is incorrect",
+   "Statement-I is incorrect, but Statement-II is correct"
+  ],
+  "answer": 3,
+  "explain": "Venezuela's crisis continues and millions have left the country, so Statement-I is wrong. It does hold the world's largest proven oil reserves."
+ },
+ {
+  "id": "p24-98",
+  "qno": 98,
+  "subject": "Schemes",
+  "text": "With reference to the Digital India Land Records Modernisation Programme, consider the following statements:\n1. To implement the scheme, the Central Government provides 100% funding.\n2. Under the Scheme, Cadastral Maps are digitised.\n3. An initiative has been undertaken to transliterate the Records of Rights from local language to any of the languages recognized by the Constitution of India.\nWhich of the statements given above are correct?",
+  "options": [
+   "1 and 2 only",
+   "2 and 3 only",
+   "1 and 3 only",
+   "1, 2 and 3"
+  ],
+  "answer": 3,
+  "explain": "All three. DILRMP has been fully centrally funded since 2016, it digitises cadastral maps, and Records of Rights are being transliterated into the 22 languages in the Eighth Schedule."
+ },
+ {
+  "id": "p24-99",
+  "qno": 99,
+  "subject": "Schemes",
+  "text": "With reference to the 'Pradhan Mantri Surakshit Matritva Abhiyan', consider the following statements:\n1. This scheme guarantees a minimum package of antenatal care services to women in their second and third trimesters of pregnancy and six months post-delivery health care service in any government health facility.\n2. Under this scheme, private sector health care providers of certain specialities can volunteer to provide services at nearby government health facilities.\nWhich of the statements given above is/are correct?",
+  "options": [
+   "1 only",
+   "2 only",
+   "Both 1 and 2",
+   "Neither 1 nor 2"
+  ],
+  "answer": 1,
+  "explain": "PMSMA offers free antenatal check-ups on the 9th of every month in the second and third trimesters. It has no six-month post-delivery guarantee, so statement 1 is wrong. Private doctors do volunteer at government facilities."
+ },
+ {
+  "id": "p24-100",
+  "qno": 100,
+  "subject": "Schemes",
+  "text": "With reference to the Pradhan Mantri Shram Yogi Maan-dhan (PM-SYM) Yojana, consider the following statements:\n1. The entry age group for enrolment in the scheme is 21 to 40 years.\n2. Age specific contribution shall be made by the beneficiary.\n3. Each subscriber under the scheme shall receive a minimum pension of ₹3,000 per month after attaining the age of 60 years.\n4. Family pension is applicable to the spouse and unmarried daughters.\nWhich of the statements given above is/are correct?",
+  "options": [
+   "1, 3 and 4",
+   "2 and 3 only",
+   "2 only",
+   "1, 2 and 4"
+  ],
+  "answer": 1,
+  "explain": "The entry age is 18–40, not 21–40. Contributions depend on age and are matched by the government, and the pension is ₹3,000 a month after 60. Family pension goes only to the spouse."
+ },
+ {
+  "id": "p24-2",
+  "qno": 2,
+  "subject": "Geography",
+  "text": "Consider the following statements:\nStatement-I: Thickness of the troposphere at the equator is much greater as compared to poles.\nStatement-II: At the equator, heat is transported to great heights by strong convectional currents.\nWhich one of the following is correct in respect of the above statements?",
+  "options": [
+   "Both Statement-I and Statement-II are correct and Statement-II explains Statement-I",
+   "Both Statement-I and Statement-II are correct, but Statement-II does not explain Statement-I",
+   "Statement-I is correct, but Statement-II is incorrect",
+   "Statement-I is incorrect, but Statement-II is correct"
+  ],
+  "answer": 0,
+  "explain": "The equator's troposphere is thicker because strong convection carries heat high into the air there. The convection is the cause, so Statement-II explains Statement-I."
+ },
+ {
+  "id": "p24-3",
+  "qno": 3,
+  "subject": "Environment",
+  "text": "Consider the following:\n1. Pyroclastic debris\n2. Ash and dust\n3. Nitrogen compounds\n4. Sulphur compounds\nHow many of the above are products of volcanic eruptions?",
+  "options": [
+   "Only one",
+   "Only two",
+   "Only three",
+   "All four"
+  ],
+  "answer": 3,
+  "explain": "Volcanoes throw out solid pyroclastic debris and ash, and release gases such as nitrogen and sulphur compounds. All four are products of eruptions."
+ },
+ {
+  "id": "p24-5",
+  "qno": 5,
+  "subject": "Economy",
+  "text": "Which of the following countries are well known as the two largest cocoa producers in the world?",
+  "options": [
+   "Algeria and Morocco",
+   "Botswana and Namibia",
+   "Côte d'Ivoire and Ghana",
+   "Madagascar and Mozambique"
+  ],
+  "answer": 2,
+  "explain": "Côte d'Ivoire and Ghana together produce more than half the world's cocoa. The other three pairs are not significant cocoa producers."
+ },
+ {
+  "id": "p24-7",
+  "qno": 7,
+  "subject": "Geography",
+  "text": "Consider the following statements:\nStatement-I: Rainfall is one of the reasons for weathering of rocks.\nStatement-II: Rain water contains carbon dioxide in solution.\nStatement-III: Rain water contains atmospheric oxygen.\nWhich one of the following is correct in respect of the above statements?",
+  "options": [
+   "Both Statement-II and Statement-III are correct and both of them explain Statement-I",
+   "Both Statement-II and Statement-III are correct, but only one of them explains Statement-I",
+   "Only one of the Statements II and III is correct and that explains Statement-I",
+   "Neither Statement-II nor Statement-III is correct"
+  ],
+  "answer": 0,
+  "explain": "Rainwater dissolves carbon dioxide to form weak carbonic acid, and it carries dissolved oxygen that drives oxidation. Both processes weather rock, so both explain Statement-I."
+ },
+ {
+  "id": "p24-8",
+  "qno": 8,
+  "subject": "Geography",
+  "text": "Consider the following countries:\n1. Finland\n2. Germany\n3. Norway\n4. Russia\nHow many of the above countries have a border with the North Sea?",
+  "options": [
+   "Only one",
+   "Only two",
+   "Only three",
+   "All four"
+  ],
+  "answer": 1,
+  "explain": "Germany and Norway border the North Sea. Finland is on the Baltic, and Russia's coast here is on the Baltic and Arctic seas."
+ },
+ {
+  "id": "p24-9",
+  "qno": 9,
+  "subject": "Geography",
+  "text": "Consider the following information (Waterfall — Region — River):\n1. Dhuandhar — Malwa — Narmada\n2. Hundru — Chota Nagpur — Subarnarekha\n3. Gersoppa — Western Ghats — Netravati\nIn how many of the above rows is the given information correctly matched?",
+  "options": [
+   "Only one",
+   "Only two",
+   "All three",
+   "None"
+  ],
+  "answer": 0,
+  "explain": "Only Hundru is correct. Dhuandhar falls on the Narmada near Jabalpur, which is not in Malwa, and Gersoppa falls on the Sharavathi, not the Netravati."
+ },
+ {
+  "id": "p24-10",
+  "qno": 10,
+  "subject": "Geography",
+  "text": "Consider the following information (Region — Name of the mountain range — Type of mountain):\n1. Central Asia — Vosges — Fold mountain\n2. Europe — Alps — Block mountain\n3. North America — Appalachians — Fold mountain\n4. South America — Andes — Fold mountain\nIn how many of the above rows is the given information correctly matched?",
+  "options": [
+   "Only one",
+   "Only two",
+   "Only three",
+   "All four"
+  ],
+  "answer": 1,
+  "explain": "The Vosges are in Europe, not Central Asia, and the Alps are fold mountains, not block mountains. The Appalachians and Andes are both fold mountains, so two rows are correct."
+ },
+ {
+  "id": "p24-12",
+  "qno": 12,
+  "subject": "Geography",
+  "text": "With reference to 'water vapour', which of the following statements is/are correct?\n1. It is a gas, the amount of which decreases with altitude.\n2. Its percentage is maximum at the poles.\nSelect the answer using the code given below:",
+  "options": [
+   "1 only",
+   "2 only",
+   "Both 1 and 2",
+   "Neither 1 nor 2"
+  ],
+  "answer": 0,
+  "explain": "Water vapour is concentrated near the surface and falls off with altitude, so statement 1 is right. It is highest in the warm tropics, not at the poles, so statement 2 is wrong."
+ },
+ {
+  "id": "p24-15",
+  "qno": 15,
+  "subject": "Geography",
+  "text": "On June 21 every year, which of the following latitude(s) experience(s) a sunlight of more than 12 hours?\n1. Equator\n2. Tropic of Cancer\n3. Tropic of Capricorn\n4. Arctic Circle\nSelect the correct answer using the code given below:",
+  "options": [
+   "1 only",
+   "2 only",
+   "3 and 4",
+   "2 and 4"
+  ],
+  "answer": 3,
+  "explain": "On 21 June the sun is overhead at the Tropic of Cancer, and days are longer than 12 hours north of the equator. The Arctic Circle gets 24-hour daylight that day, while the equator and Tropic of Capricorn have about 12 hours."
+ },
+ {
+  "id": "p24-16",
+  "qno": 16,
+  "subject": "Environment",
+  "text": "One of the following regions has the world's largest tropical peatland, which holds about three years worth of global carbon emissions from fossil fuels; and the possible destruction of which can exert detrimental effect on the global climate. Which one of the following denotes that region?",
+  "options": [
+   "Amazon Basin",
+   "Congo Basin",
+   "Kikori Basin",
+   "Rio de la Plata Basin"
+  ],
+  "answer": 1,
+  "explain": "The Cuvette Centrale peatlands in the Congo Basin are the largest tropical peatland, storing huge amounts of carbon. Draining or burning them would release that carbon."
+ },
+ {
+  "id": "p24-17",
+  "qno": 17,
+  "subject": "Environment",
+  "text": "With reference to perfluoroalkyl and polyfluoroalkyl substances (PFAS) that are used in making many consumer products, consider the following statements:\n1. PFAS are found to be widespread in drinking water, food and food packaging materials.\n2. PFAS are not easily degraded in the environment.\n3. Persistent exposure to PFAS can lead to bioaccumulation in animal bodies.\nWhich of the statements given above are correct?",
+  "options": [
+   "1 and 2 only",
+   "2 and 3 only",
+   "1 and 3 only",
+   "1, 2 and 3"
+  ],
+  "answer": 3,
+  "explain": "PFAS are often called forever chemicals: they are found in water and food packaging, do not break down, and build up in animal bodies over time. All three statements are correct."
+ },
+ {
+  "id": "p24-19",
+  "qno": 19,
+  "subject": "Environment",
+  "text": "Consider the following plants:\n1. Groundnut\n2. Horse-gram\n3. Soybean\nHow many of the above belong to the pea family?",
+  "options": [
+   "Only one",
+   "Only two",
+   "All three",
+   "None"
+  ],
+  "answer": 2,
+  "explain": "Groundnut, horse-gram and soybean are all legumes, which belong to the pea family, Fabaceae."
+ },
+ {
+  "id": "p24-27",
+  "qno": 27,
+  "subject": "Environment",
+  "text": "Consider the following:\n1. Battery storage\n2. Biomass generators\n3. Fuel cells\n4. Rooftop solar photovoltaic units\nHow many of the above are considered 'Distributed Energy Resources'?",
+  "options": [
+   "Only one",
+   "Only two",
+   "Only three",
+   "All four"
+  ],
+  "answer": 3,
+  "explain": "Distributed energy resources are small power sources close to where the energy is used. Batteries, biomass generators, fuel cells and rooftop solar all fit that description."
+ },
+ {
+  "id": "p24-28",
+  "qno": 28,
+  "subject": "Environment",
+  "text": "Which one of the following shows a unique relationship with an insect that has coevolved with it and that is the only insect that can pollinate this tree?",
+  "options": [
+   "Fig",
+   "Mahua",
+   "Sandalwood",
+   "Silk cotton"
+  ],
+  "answer": 0,
+  "explain": "Fig trees depend on tiny fig wasps, which pollinate only fig species and lay their eggs inside the fruit. The other trees don't rely on a single pollinator in this way."
+ },
+ {
+  "id": "p24-29",
+  "qno": 29,
+  "subject": "Environment",
+  "text": "Consider the following:\n1. Butterflies\n2. Fish\n3. Frogs\nHow many of the above have poisonous species among them?",
+  "options": [
+   "Only one",
+   "Only two",
+   "All three",
+   "None"
+  ],
+  "answer": 2,
+  "explain": "Each group has poisonous members: some butterflies store toxins from their food, some fish such as pufferfish are poisonous, and some frogs, like poison dart frogs, carry toxins in their skin."
+ },
+ {
+  "id": "p24-30",
+  "qno": 30,
+  "subject": "Environment",
+  "text": "Consider the following:\n1. Cashew\n2. Papaya\n3. Red sanders\nHow many of the above trees are actually native to India?",
+  "options": [
+   "Only one",
+   "Only two",
+   "All three",
+   "None"
+  ],
+  "answer": 0,
+  "explain": "Only red sanders is native to India, found in the Eastern Ghats. Cashew comes from Brazil and papaya from tropical America."
+ },
+ {
+  "id": "p24-32",
+  "qno": 32,
+  "subject": "Geography",
+  "text": "Consider the following statements:\nStatement-I: Giant stars live much longer than dwarf stars.\nStatement-II: Compared to dwarf stars, giant stars have a greater rate of nuclear reactions.\nWhich one of the following is correct in respect of the above statements?",
+  "options": [
+   "Both Statement-I and Statement-II are correct and Statement-II explains Statement-I",
+   "Both Statement-I and Statement-II are correct, but Statement-II does not explain Statement-I",
+   "Statement-I is correct, but Statement-II is incorrect",
+   "Statement-I is incorrect, but Statement-II is correct"
+  ],
+  "answer": 3,
+  "explain": "Giant stars burn their fuel much faster than dwarf stars, so they live far shorter lives. Statement-II is right about the faster rate of nuclear reactions."
+ },
+ {
+  "id": "p24-33",
+  "qno": 33,
+  "subject": "Environment",
+  "text": "Which one of the following is synthesised in human body that dilates blood vessels and increases blood flow?",
+  "options": [
+   "Nitric oxide",
+   "Nitrous oxide",
+   "Nitrogen dioxide",
+   "Nitrogen pentoxide"
+  ],
+  "answer": 0,
+  "explain": "The body makes nitric oxide, which relaxes the smooth muscle in blood vessel walls and widens them. The other three oxides are not made in the body this way."
+ },
+ {
+  "id": "p24-34",
+  "qno": 34,
+  "subject": "Environment",
+  "text": "Consider the following activities:\n1. Identification of narcotics on passengers at airports or in aircraft\n2. Monitoring of precipitation\n3. Tracking the migration of animals\nIn how many of the above activities can the radars be used?",
+  "options": [
+   "Only one",
+   "Only two",
+   "All three",
+   "None"
+  ],
+  "answer": 1,
+  "explain": "Weather radar monitors precipitation and radar can track the migration of birds. Narcotics are detected by X-ray scanners and sniffer dogs, not radar."
+ },
+ {
+  "id": "p24-35",
+  "qno": 35,
+  "subject": "International",
+  "text": "Consider the following aircraft:\n1. Rafale\n2. MiG-29\n3. Tejas Mk1\nHow many of the above are considered fifth generation fighter aircraft?",
+  "options": [
+   "Only one",
+   "Only two",
+   "All three",
+   "None"
+  ],
+  "answer": 3,
+  "explain": "None of them is fifth generation. Rafale and MiG-29 are fourth or 4.5-generation jets, and Tejas Mk1 is an early fourth-generation light fighter. Fifth-generation jets, like the F-35, have stealth."
+ },
+ {
+  "id": "p24-37",
+  "qno": 37,
+  "subject": "Environment",
+  "text": "Which one of the following is the exhaust pipe emission from Fuel Cell Electric Vehicles, powered by hydrogen?",
+  "options": [
+   "Hydrogen peroxide",
+   "Hydronium",
+   "Oxygen",
+   "Water vapour"
+  ],
+  "answer": 3,
+  "explain": "A hydrogen fuel cell combines hydrogen with oxygen to make electricity, and the only thing it releases from the exhaust is water vapour."
+ },
+ {
+  "id": "p24-38",
+  "qno": 38,
+  "subject": "Environment",
+  "text": "Recently, the term 'pumped-storage hydropower' is actually and appropriately discussed in the context of which one of the following?",
+  "options": [
+   "Irrigation of terraced crop fields",
+   "Lift irrigation of cereal crops",
+   "Long duration energy storage",
+   "Rainwater harvesting system"
+  ],
+  "answer": 2,
+  "explain": "Pumped-storage plants pump water uphill when power is cheap and release it through turbines later. That makes them a form of long-duration energy storage for the grid."
+ },
+ {
+  "id": "p24-39",
+  "qno": 39,
+  "subject": "Environment",
+  "text": "'Membrane Bioreactors' are often discussed in the context of:",
+  "options": [
+   "Assisted reproductive technologies",
+   "Drug delivery nanotechnologies",
+   "Vaccine production technologies",
+   "Wastewater treatment technologies"
+  ],
+  "answer": 3,
+  "explain": "A membrane bioreactor combines biological treatment with membrane filtration to clean wastewater to a high standard. The other three options don't use this technology."
+ },
+ {
+  "id": "p24-40",
+  "qno": 40,
+  "subject": "Economy",
+  "text": "With reference to the Indian economy, 'Collateral Borrowing and Lending Obligations' are the instruments of:",
+  "options": [
+   "Bond market",
+   "Forex market",
+   "Money market",
+   "Stock market"
+  ],
+  "answer": 2,
+  "explain": "CBLO is a short-term instrument, traded through the Clearing Corporation of India, that lets banks borrow and lend against securities. It belongs to the money market."
+ },
+ {
+  "id": "p24-41",
+  "qno": 41,
+  "subject": "Economy",
+  "text": "The total fertility rate in an economy is defined as:",
+  "options": [
+   "the number of children born per 1000 people in the population in a year.",
+   "the number of children born to a couple in their lifetime in a given population.",
+   "the birth rate minus death rate.",
+   "the average number of live births a woman would have by the end of her child-bearing age."
+  ],
+  "answer": 3,
+  "explain": "Total fertility rate is the average number of children a woman would have over her child-bearing years, if current birth rates stayed the same. Per-1000 figures describe the crude birth rate instead."
+ },
+ {
+  "id": "p24-47",
+  "qno": 47,
+  "subject": "Economy",
+  "text": "With reference to physical capital in Indian economy, consider the following pairs (Item — Category):\n1. Farmer's plough — Working capital\n2. Computer — Fixed capital\n3. Yarn used by the weaver — Fixed capital\n4. Petrol — Working capital\nHow many of the above pairs are correctly matched?",
+  "options": [
+   "Only one",
+   "Only two",
+   "Only three",
+   "All four"
+  ],
+  "answer": 1,
+  "explain": "A plough and a computer are durable tools, so they are fixed capital. Yarn and petrol are used up in production, so they are working capital. Only the computer and petrol pairs are correct."
+ },
+ {
+  "id": "p24-48",
+  "qno": 48,
+  "subject": "International",
+  "text": "Which one of the following words/phrases is most appropriately used to denote 'an interoperable network of 3D virtual worlds that can be accessed simultaneously by millions of users, who can exert property rights over virtual items'?",
+  "options": [
+   "Big data analytics",
+   "Cryptography",
+   "Metaverse",
+   "Virtual matrix"
+  ],
+  "answer": 2,
+  "explain": "The metaverse is a network of linked 3D virtual spaces that people can enter together, and the items they own in it can carry property rights."
+ },
+ {
+  "id": "p24-50",
+  "qno": 50,
+  "subject": "Economy",
+  "text": "With reference to Corporate Social Responsibility (CSR) rules in India, consider the following statements:\n1. CSR rules specify that expenditures that benefit the company directly or its employees will not be considered as CSR activities.\n2. CSR rules do not specify minimum spending on CSR activities.\nWhich of the statements given above is/are correct?",
+  "options": [
+   "1 only",
+   "2 only",
+   "Both 1 and 2",
+   "Neither 1 nor 2"
+  ],
+  "answer": 0,
+  "explain": "Spending that directly helps the company or its employees doesn't count as CSR. The rules do require a minimum spend, 2% of average net profit for eligible companies, so statement 2 is wrong."
+ },
+ {
+  "id": "p24-54",
+  "qno": 54,
+  "subject": "History & Culture",
+  "text": "With reference to ancient India, Gautama Buddha was generally known by which of the following epithets?\n1. Nayaputta\n2. Shakyamuni\n3. Tathagata\nSelect the correct answer using the code given below:",
+  "options": [
+   "1 only",
+   "2 and 3 only",
+   "1, 2 and 3",
+   "None of the above are epithets of Gautama Buddha"
+  ],
+  "answer": 1,
+  "explain": "Shakyamuni ('sage of the Shakyas') and Tathagata ('one who has thus come') are Buddhist epithets. Nayaputta belongs to Mahavira, the Jain teacher."
+ },
+ {
+  "id": "p24-56",
+  "qno": 56,
+  "subject": "History & Culture",
+  "text": "Who of the following rulers of medieval India gave permission to the Portuguese to build a fort at Bhatkal?",
+  "options": [
+   "Krishnadevaraya",
+   "Narasimha Saluva",
+   "Muhammad Shah III",
+   "Yusuf Adil Shah"
+  ],
+  "answer": 0,
+  "explain": "Krishnadevaraya of Vijayanagara allowed the Portuguese to fortify Bhatkal on the Karnataka coast in the early 1500s, as part of his trade links with them."
+ },
+ {
+  "id": "p24-58",
+  "qno": 58,
+  "subject": "History & Culture",
+  "text": "Consider the following statements:\n1. There are no parables in Upanishads.\n2. Upanishads were composed earlier than the Puranas.\nWhich of the statements given above is/are correct?",
+  "options": [
+   "1 only",
+   "2 only",
+   "Both 1 and 2",
+   "Neither 1 nor 2"
+  ],
+  "answer": 1,
+  "explain": "The Upanishads contain several parables and stories, so statement 1 is wrong. They were composed before the Puranas, which were compiled later, so statement 2 is correct."
+ },
+ {
+  "id": "p24-65",
+  "qno": 65,
+  "subject": "History & Culture",
+  "text": "Consider the following properties included in the World Heritage List released by UNESCO:\n1. Shantiniketan\n2. Rani-ki-Vav\n3. Sacred Ensembles of the Hoysalas\n4. Mahabodhi Temple Complex at Bodhgaya\nHow many of the above properties were included in 2023?",
+  "options": [
+   "Only one",
+   "Only two",
+   "Only three",
+   "All four"
+  ],
+  "answer": 1,
+  "explain": "Shantiniketan and the Sacred Ensembles of the Hoysalas were added in 2023. Rani-ki-Vav was added in 2014, and the Mahabodhi Temple Complex in 2002."
+ },
+ {
+  "id": "p24-66",
+  "qno": 66,
+  "subject": "Polity",
+  "text": "As per Article 368 of the Constitution of India, the Parliament may amend any provision of the Constitution by way of:\n1. Addition\n2. Variation\n3. Repeal\nSelect the correct answer using the code given below:",
+  "options": [
+   "1 and 2 only",
+   "2 and 3 only",
+   "1 and 3 only",
+   "1, 2 and 3"
+  ],
+  "answer": 3,
+  "explain": "Article 368 allows Parliament to amend the Constitution by adding, varying or repealing any provision. All three are covered."
+ },
+ {
+  "id": "p24-67",
+  "qno": 67,
+  "subject": "Economy",
+  "text": "Consider the following countries:\n1. Italy\n2. Japan\n3. Nigeria\n4. South Korea\n5. South Africa\nWhich of the above countries are frequently mentioned in the media for their low birth rates, or ageing population or declining population?",
+  "options": [
+   "1, 2 and 4",
+   "1, 3 and 5",
+   "2 and 4 only",
+   "3 and 5 only"
+  ],
+  "answer": 0,
+  "explain": "Italy, Japan and South Korea all have very low fertility and ageing populations. Nigeria and South Africa still have higher fertility, and their populations are growing."
+ },
+ {
+  "id": "p24-68",
+  "qno": 68,
+  "subject": "Polity",
+  "text": "Which of the following statements are correct in respect of a Money Bill in the Parliament?\n1. Article 109 mentions special procedure in respect of Money Bills.\n2. A Money Bill shall not be introduced in the Council of States.\n3. The Rajya Sabha can either approve the Bill or suggest changes but cannot reject it.\n4. Amendments to a Money Bill suggested by the Rajya Sabha have to be accepted by the Lok Sabha.\nSelect the answer using the code given below:",
+  "options": [
+   "1 and 2 only",
+   "2 and 3 only",
+   "1, 2 and 3",
+   "1, 3 and 4"
+  ],
+  "answer": 2,
+  "explain": "Article 109 sets the special procedure for Money Bills, which start only in the Lok Sabha. The Rajya Sabha can only recommend changes, and the Lok Sabha isn't bound to accept them."
+ },
+ {
+  "id": "p24-69",
+  "qno": 69,
+  "subject": "International",
+  "text": "Which of the following is/are correctly matched in terms of equivalent rank in the three services of Indian Defence forces? (Army — Air Force — Navy)\n1. Brigadier — Air Commodore — Commander\n2. Major General — Air Vice Marshal — Vice Admiral\n3. Major — Squadron Leader — Lieutenant Commander\n4. Lieutenant Colonel — Group Captain — Captain\nSelect the correct answer using the code given below:",
+  "options": [
+   "1 and 4",
+   "1 and 3",
+   "2, 3 and 4",
+   "3 only"
+  ],
+  "answer": 3,
+  "explain": "Only row 3 is right: Major, Squadron Leader and Lieutenant Commander are equal ranks. Brigadier matches Navy Commodore, not Commander, and Major General matches Rear Admiral, not Vice Admiral."
+ },
+ {
+  "id": "p24-71",
+  "qno": 71,
+  "subject": "Polity",
+  "text": "How many Delimitation Commissions have been constituted by the Government of India till December 2023?",
+  "options": [
+   "One",
+   "Two",
+   "Three",
+   "Four"
+  ],
+  "answer": 3,
+  "explain": "Four have been set up, in 1952, 1963, 1973 and 2002. Each was formed to redraw constituency boundaries after a census, which is why the count is four and not two or three."
+ },
+ {
+  "id": "p24-72",
+  "qno": 72,
+  "subject": "Polity",
+  "text": "The Constitution (71st Amendment) Act, 1992 amends the Eighth Schedule to the Constitution to include which of the following languages?\n1. Konkani\n2. Manipuri\n3. Nepali\n4. Maithili\nSelect the correct answer using the code given below:",
+  "options": [
+   "1, 2 and 3",
+   "1, 2 and 4",
+   "1, 3 and 4",
+   "2, 3 and 4"
+  ],
+  "answer": 0,
+  "explain": "The 71st Amendment added Konkani, Manipuri and Nepali. Maithili was added later, by the 92nd Amendment in 2003."
+ },
+ {
+  "id": "p24-73",
+  "qno": 73,
+  "subject": "Polity",
+  "text": "Consider the following pairs (Party — Its Leader):\n1. Bharatiya Jana Sangh — Dr. Shyama Prasad Mukherjee\n2. Socialist Party — C. Rajagopalachari\n3. Congress for Democracy — Jagjivan Ram\n4. Swatantra Party — Acharya Narendra Dev\nHow many of the above are correctly matched?",
+  "options": [
+   "Only one",
+   "Only two",
+   "Only three",
+   "All four"
+  ],
+  "answer": 1,
+  "explain": "Two pairs are right: Jana Sangh with Shyama Prasad Mukherjee, and Congress for Democracy with Jagjivan Ram. Rajagopalachari led the Swatantra Party, and Acharya Narendra Dev led the Socialist Party."
+ },
+ {
+  "id": "p24-74",
+  "qno": 74,
+  "subject": "Polity",
+  "text": "Which of the following statements are correct about the Constitution of India?\n1. Powers of the Municipalities are given in Part IX A of the Constitution.\n2. Emergency provisions are given in Part XVIII of the Constitution.\n3. Provisions related to the amendment of the Constitution are given in Part XX of the Constitution.\nSelect the answer using the code given below:",
+  "options": [
+   "1 and 2 only",
+   "2 and 3 only",
+   "1 and 3 only",
+   "1, 2 and 3"
+  ],
+  "answer": 3,
+  "explain": "Part IX-A covers municipalities, Part XVIII covers emergency provisions, and Part XX covers amendment. All three statements are correct."
+ },
+ {
+  "id": "p24-76",
+  "qno": 76,
+  "subject": "Polity",
+  "text": "Under which of the following Articles of the Constitution of India, has the Supreme Court of India placed the Right to Privacy?",
+  "options": [
+   "Article 15",
+   "Article 16",
+   "Article 19",
+   "Article 21"
+  ],
+  "answer": 3,
+  "explain": "In the Puttaswamy judgment (2017), the Supreme Court held that privacy is part of the right to life and personal liberty under Article 21."
+ },
+ {
+  "id": "p24-77",
+  "qno": 77,
+  "subject": "International",
+  "text": "What are the duties of the Chief of Defence Staff (CDS) as Head of the Department of Military Affairs?\n1. Permanent Chairman of Chiefs of Staff Committee\n2. Exercise military command over the three Service Chiefs\n3. Principal Military Advisor to Defence Minister on all tri-service matters\nSelect the correct answer using the code given below:",
+  "options": [
+   "1, 2 and 3",
+   "1 and 2 only",
+   "2 and 3 only",
+   "1 and 3 only"
+  ],
+  "answer": 3,
+  "explain": "The CDS is permanent chairman of the Chiefs of Staff Committee and principal military adviser to the Defence Minister. The CDS does not command the three Service Chiefs."
+ },
+ {
+  "id": "p24-78",
+  "qno": 78,
+  "subject": "International",
+  "text": "Operations undertaken by the Army towards upliftment of the local population in remote areas to include addressing of their basic needs is called:",
+  "options": [
+   "Operation Sankalp",
+   "Operation Maitri",
+   "Operation Sadbhavana",
+   "Operation Madad"
+  ],
+  "answer": 2,
+  "explain": "Operation Sadbhavana is the Army's programme to help remote communities with basic needs. Operation Madad is disaster relief, and Operation Sankalp is a naval mission."
+ },
+ {
+  "id": "p24-83",
+  "qno": 83,
+  "subject": "Polity",
+  "text": "A Writ of Prohibition is an order issued by the Supreme Court or High Courts to:",
+  "options": [
+   "a government officer prohibiting him from taking a particular action.",
+   "the Parliament/Legislative Assembly to pass a law on Prohibition.",
+   "the lower court prohibiting continuation of proceedings in a case.",
+   "the Government prohibiting it from following an unconstitutional policy."
+  ],
+  "answer": 2,
+  "explain": "A writ of prohibition stops a lower court or tribunal from continuing proceedings beyond its authority. It doesn't stop officers' actions or legislation."
+ },
+ {
+  "id": "p24-84",
+  "qno": 84,
+  "subject": "Polity",
+  "text": "Consider the following statements:\n1. It is the Governor of the State who recognizes and declares any community of that State as a Scheduled Tribe.\n2. A community declared as a Scheduled Tribe in a State need not be so in another State.\nWhich of the statements given above is/are correct?",
+  "options": [
+   "1 only",
+   "2 only",
+   "Both 1 and 2",
+   "Neither 1 nor 2"
+  ],
+  "answer": 1,
+  "explain": "Scheduled Tribes are notified by the President, not the Governor, so statement 1 is wrong. Tribe status is state-specific, so statement 2 is right."
+ },
+ {
+  "id": "p24-86",
+  "qno": 86,
+  "subject": "International",
+  "text": "Who of the following is the author of the books 'The India Way' and 'Why Bharat Matters'?",
+  "options": [
+   "Bhupender Yadav",
+   "Nalin Mehta",
+   "Shashi Tharoor",
+   "Subrahmanyam Jaishankar"
+  ],
+  "answer": 3,
+  "explain": "Both books are by External Affairs Minister S. Jaishankar, and they set out his views on India's foreign policy."
+ },
+ {
+  "id": "p24-87",
+  "qno": 87,
+  "subject": "International",
+  "text": "Consider the following pairs (Country — Reason for being in the news):\n1. Argentina — Worst economic crisis\n2. Sudan — War between the country's regular army and paramilitary forces\n3. Turkey — Rescinded its membership of NATO\nHow many of the pairs given above are correctly matched?",
+  "options": [
+   "Only one pair",
+   "Only two pairs",
+   "All three pairs",
+   "None of the pairs"
+  ],
+  "answer": 1,
+  "explain": "Sudan's war between the army and the paramilitary Rapid Support Forces is correct, and so is Argentina's economic crisis. Turkey has not left NATO, so the third pair is wrong."
+ },
+ {
+  "id": "p24-89",
+  "qno": 89,
+  "subject": "Geography",
+  "text": "Consider the following statements:\n1. The Red Sea receives very little precipitation in any form.\n2. No water enters the Red Sea from rivers.\nWhich of the statements given above is/are correct?",
+  "options": [
+   "1 only",
+   "2 only",
+   "Both 1 and 2",
+   "Neither 1 nor 2"
+  ],
+  "answer": 2,
+  "explain": "The Red Sea is one of the driest seas, with very little rain. It has no perennial rivers flowing into it, so both statements are correct."
+ },
+ {
+  "id": "p24-90",
+  "qno": 90,
+  "subject": "Environment",
+  "text": "According to the Environmental Protection Agency (EPA), which one of the following is the largest source of sulphur dioxide emissions?",
+  "options": [
+   "Locomotives using fossil fuels",
+   "Ships using fossil fuels",
+   "Extraction of metals from ores",
+   "Power plants using fossil fuels"
+  ],
+  "answer": 3,
+  "explain": "Burning coal and oil in power plants releases most of the sulphur dioxide, far more than ships or trains."
+ },
+ {
+  "id": "p24-91",
+  "qno": 91,
+  "subject": "International",
+  "text": "Consider the following statements:\nStatement-I: There is instability and worsening security situation in the Sahel region.\nStatement-II: There have been military takeovers/coups d'état in several countries of the Sahel region in the recent past.\nWhich one of the following is correct in respect of the above statements?",
+  "options": [
+   "Both Statement-I and Statement-II are correct and Statement-II explains Statement-I",
+   "Both Statement-I and Statement-II are correct, but Statement-II does not explain Statement-I",
+   "Statement-I is correct, but Statement-II is incorrect",
+   "Statement-I is incorrect, but Statement-II is correct"
+  ],
+  "answer": 0,
+  "explain": "Coups in several Sahel countries have fuelled insecurity across the region, so Statement-II explains Statement-I."
+ },
+ {
+  "id": "p24-95",
+  "qno": 95,
+  "subject": "Polity",
+  "text": "With reference to the Parliament of India, consider the following statements:\n1. Prorogation of a House by the President of India does not require the advice of the Council of Ministers.\n2. Prorogation of a House is generally done after the House is adjourned sine die but there is no bar to the President of India prorogating the House which is in session.\n3. Dissolution of the Lok Sabha is done by the President of India who, save in exceptional circumstances, does so on the advice of the Council of Ministers.\nWhich of the statements given above is/are correct?",
+  "options": [
+   "1 only",
+   "1 and 2",
+   "2 and 3",
+   "3 only"
+  ],
+  "answer": 2,
+  "explain": "Prorogation is done on the Council of Ministers' advice, so statement 1 is wrong. The President can prorogue a House in session, and dissolution normally follows the Council's advice, so statements 2 and 3 are correct."
+ },
+ {
+  "id": "p24-96",
+  "qno": 96,
+  "subject": "International",
+  "text": "Consider the following statements:\nStatement-I: The European Parliament approved The Net-Zero Industry Act recently.\nStatement-II: The European Union intends to achieve carbon neutrality by 2040 and therefore aims to develop all of its own clean technology by that time.\nWhich one of the following is correct in respect of the above statements?",
+  "options": [
+   "Both Statement-I and Statement-II are correct and Statement-II explains Statement-I",
+   "Both Statement-I and Statement-II are correct, but Statement-II does not explain Statement-I",
+   "Statement-I is correct, but Statement-II is incorrect",
+   "Statement-I is incorrect, but Statement-II is correct"
+  ],
+  "answer": 2,
+  "explain": "The European Parliament passed the Net-Zero Industry Act in 2024, so Statement-I is correct. The EU's carbon-neutrality target is 2050, not 2040, so Statement-II is wrong."
+ }
+]
