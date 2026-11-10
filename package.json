@@ -1,0 +1,13 @@
+{
+  "name": "upsc-telegram-bot",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Posts a daily UPSC current-affairs digest and a pre-written content calendar to a Telegram channel.",
+  "scripts": {
+    "start": "tsx src/worker.ts",
+    "dry-ca": "tsx src/dry-ca.ts",
+    "check": "tsx src/check-content.ts && tsc --noEmit"
+  },
+  "dependencies": { "dotenv": "^16.4.5", "groq-sdk": "^1.2.0", "mongoose": "^9.6.0", "tsx": "^4.19.0" },
+  "devDependencies": { "@types/node": "^22.0.0", "typescript": "^5.6.0" }
+}

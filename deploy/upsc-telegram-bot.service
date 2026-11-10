@@ -1,0 +1,17 @@
+[Unit]
+Description=UPSC Telegram channel bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=deploy
+WorkingDirectory=/opt/upsc-telegram-bot
+EnvironmentFile=/opt/upsc-telegram-bot/.env
+ExecStart=/usr/bin/npm start
+Restart=always
+RestartSec=10
+Environment=TZ=Asia/Kolkata
+
+[Install]
+WantedBy=multi-user.target
