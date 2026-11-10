@@ -9,7 +9,7 @@ State (what has been sent) lives in MongoDB, so restarts never double-post.
 
 ## How a day works
 
-1. 05:30 IST: the worker fetches the feeds, asks Groq to pick the three most exam-relevant stories, fetches each article's text and asks for a two-sentence note using only that text. Output that fails a check (fewer than three items, an em-dash) is discarded and logged as `failed`, and nothing is posted.
+1. 05:30 IST: the worker fetches the feeds, asks Groq to pick the three most exam-relevant stories, fetches each article's text and asks for a two-sentence note using only that text. Each note must be two short sentences, free of filler, and every number in it must appear in the source text. A digest that cannot reach three clean items is discarded and logged as `failed`, and nothing is posted. At most two items come from PIB, and stories posted in the last four days are skipped.
 2. The three items are also saved to the `ca_daily` collection. The website can turn a week of them into a weekly roundup page.
 3. 07:00 IST: the digest is posted.
 4. Calendar posts go out at their own times. A post more than six hours late is skipped, not sent.
@@ -28,15 +28,13 @@ npm start                # runs it for real
 ## Deploy on a VPS (systemd)
 
 ```bash
-sudo mkdir -p /opt/upsc-telegram-bot && sudo chown deploy: /opt/upsc-telegram-bot
-git clone https://github.com/icancodefyi/upsc-telegram-bot /opt/upsc-telegram-bot
-cd /opt/upsc-telegram-bot && cp .env.example .env && nano .env && npm ci
-sudo cp deploy/upsc-telegram-bot.service /etc/systemd/system/
-sudo systemctl daemon-reload && sudo systemctl enable --now upsc-telegram-bot
+curl -fsSL https://raw.githubusercontent.com/icancodefyi/upsc-telegram-bot/main/deploy/install.sh | bash   # first run creates .env
+nano /opt/upsc-telegram-bot/.env                                                                         # fill in the values
+curl -fsSL https://raw.githubusercontent.com/icancodefyi/upsc-telegram-bot/main/deploy/install.sh | bash   # validates, installs the service, starts it
 journalctl -u upsc-telegram-bot -f
 ```
 
-Node 20 or newer. To add a week of posts, put a new `content/week-N.json` in the repo, run `npm run check -- --links`, then `git pull` on the server. No restart is needed, the worker re-reads the folder every minute.
+Needs Node 20 or newer and `git`. To update: run the script again. To add a week of posts, put a new `content/week-N.json` in the repo, run `npm run check -- --links`, push, then run the script on the server. The worker re-reads the content folder every minute.
 
 ## Notes
 
