@@ -2,7 +2,7 @@ import "dotenv/config";
 import mongoose from "mongoose";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { sendToChannel } from "./telegram";
+import { sendToChannel, sendPhotoToChannel } from "./telegram";
 import { buildDailyCA } from "./daily-ca";
 
 /**
@@ -11,7 +11,7 @@ import { buildDailyCA } from "./daily-ca";
  *  - the daily current-affairs post: built at 05:30 IST and sent at 07:00 IST.
  * State lives in MongoDB (tg_posts) so a restart never double-posts.
  */
-type Planned = { id: string; at: string; text: string; preview?: boolean };
+type Planned = { id: string; at: string; text: string; preview?: boolean; photo?: string };
 
 const IST = "Asia/Kolkata";
 const istParts = (d = new Date()) => {
@@ -38,7 +38,7 @@ async function tick() {
     const claim = await col.updateOne({ _id: p.id as never }, { $setOnInsert: { status: "sending", at: now } }, { upsert: true });
     if (claim.upsertedCount === 0) continue; // already sent or being sent
     try {
-      const mid = await sendToChannel(p.text, { preview: p.preview });
+      const mid = p.photo ? await sendPhotoToChannel(p.photo, p.text) : await sendToChannel(p.text, { preview: p.preview });
       await col.updateOne({ _id: p.id as never }, { $set: { status: "sent", messageId: mid, sentAt: new Date() } });
       log("sent", p.id, mid);
     } catch (e) {
