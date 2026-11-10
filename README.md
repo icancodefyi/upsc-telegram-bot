@@ -24,6 +24,29 @@ Everything below runs on its own. Nothing needs refilling.
 
 `QUIZ_TIMES` (comma-separated, default `10:00`; empty turns quizzes off) sets the quiz times. Each slot takes the next item of its pool, tracked in MongoDB, so it never repeats until the pool is used up. Calendar posts in `content/*.json` (an id, an IST time, the text) still work for one-off announcements.
 
+## When something fails
+
+Every job is retried (three attempts, ten minutes apart) and has a fallback, so the channel does not go quiet.
+
+| What fails | What happens instead |
+|---|---|
+| The AI model is rate-limited or down | Four models are tried in turn, with waits for rate limits. If all fail, the digest becomes a headlines-only post |
+| One or more news feeds are down | The other feeds are used (nine feeds across three sources) |
+| Every feed is down | A "revise these" post from the last few digests |
+| No digest at all by 08:30 | A tip is posted so the morning is never empty |
+| A concept topic cannot be written cleanly (Wikipedia down, numbers not in the source) | Up to four topics are tried, then a tip is posted |
+| The toppers database cannot be read for a data fact | A tip is posted |
+| Telegram rejects the formatting | The post is resent as plain text |
+| Telegram rejects an image | The caption is posted as text |
+| Telegram rejects a quiz poll | The question is posted as text with the answer behind a spoiler |
+| Telegram rate-limits or errors | Retried, honouring its `retry_after` |
+| The process crashes or hangs | systemd restarts it. A watchdog exits the process if no tick has finished for ten minutes. Restarts never double-post |
+| MongoDB is unreachable | The worker keeps retrying every minute and resumes without losing its place |
+
+If `ADMIN_CHAT_ID` is set, the bot messages you when a job fails three times, when a fallback was used, and with a short report at 22:15 each day. To get your id, send any message to the bot, then open `https://api.telegram.org/bot<TOKEN>/getUpdates` and read `message.chat.id`.
+
+Dry-run failure tests: `DRY_RUN=1 TEST_FAIL=llm` (AI down) or `TEST_FAIL=feeds` (no feeds), with `FORCE_CA=1` and `TEST_HM=07:05`.
+
 ## How a day works
 
 1. 05:30 IST: the worker fetches the feeds, asks Groq to pick the three most exam-relevant stories, fetches each article's text and asks for a two-sentence note using only that text. Each note must be two short sentences, free of filler, and every number in it must appear in the source text. A digest that cannot reach three clean items is discarded and logged as `failed`, and nothing is posted. At most two items come from PIB, and stories posted in the last four days are skipped.

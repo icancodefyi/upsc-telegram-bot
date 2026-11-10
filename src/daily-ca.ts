@@ -1,23 +1,8 @@
-import Groq from "groq-sdk";
+import { askJson } from "./llm";
 import { fetchCandidates, fetchText, type Candidate } from "./sources";
 
-const MODELS = ["openai/gpt-oss-120b", "openai/gpt-oss-20b"];
 const MAX_NOTE_WORDS = 40;
 const MAX_PIB = 2;
-
-async function ask(prompt: string): Promise<unknown> {
-  const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
-  let last: unknown;
-  for (const model of MODELS) {
-    try {
-      const r = await groq.chat.completions.create({ model, temperature: 0.2, response_format: { type: "json_object" }, messages: [{ role: "user", content: prompt }] });
-      return JSON.parse(r.choices[0].message.content ?? "{}");
-    } catch (e) {
-      last = e;
-    }
-  }
-  throw last;
-}
 
 export type Item = { title: string; note: string; paper: string; url: string; source: string };
 
@@ -61,7 +46,7 @@ Return JSON: {"title": up to 10 words, "note": "...", "paper": one of GS1, GS2, 
 Headline: ${c.title}
 Source text: ${body}`;
   for (let attempt = 0; attempt < 2; attempt++) {
-    const r = (await ask(attempt === 0 ? base : base + "\n\nYour last answer was too long or used filler. Make it shorter and plainer.")) as { skip?: boolean; title?: string; note?: string; paper?: string };
+    const r = (await askJson(attempt === 0 ? base : base + "\n\nYour last answer was too long or used filler. Make it shorter and plainer.")) as { skip?: boolean; title?: string; note?: string; paper?: string };
     if (r.skip || !r.title || !r.note) return null;
     const note = acceptable(r.note, body);
     if (note) return { title: clean(r.title), note, paper: PAPERS.includes(r.paper ?? "") ? r.paper! : "GS2", url: c.url, source: c.source };
@@ -83,7 +68,7 @@ export async function buildDailyCA(date: Date, seen: Set<string> = new Set()): P
   ].map((c, i) => ({ ...c, id: i + 1 }));
   const list = pool.map((c) => `${c.id}. [${c.source}] ${c.title}${c.description ? " :: " + c.description.slice(0, 100) : ""}`).join("\n");
 
-  const pick = (await ask(
+  const pick = (await askJson(
     `You help a UPSC Civil Services aspirant. From the news list choose the 6 stories most useful for the exam: policy, governance, economy, environment, international relations, science and technology, polity. Prefer different topics. Skip crime, sport, entertainment, routine party politics and ceremonial events. Rank them best first.\nReturn JSON: {"ids":[n,n,n,n,n,n]}.\n\n${list}`,
   )) as { ids?: number[] };
   const ids = [...new Set(pick.ids ?? [])].slice(0, 6);
@@ -109,4 +94,70 @@ export async function buildDailyCA(date: Date, seen: Set<string> = new Set()): P
     `\n\nMore: https://upscprepnotes.in/current-affairs?utm_source=telegram&utm_medium=channel&utm_campaign=daily_ca`;
   if (/[—–]/.test(html)) throw new Error("dash character in output");
   return { html, items };
+}
+
+
+const RELEVANT = /(policy|scheme|bill\b|\bact\b|ministry|supreme court|high court|\brbi\b|\bgst\b|budget|climate|treaty|summit|united nations|\bisro\b|mission|commission|parliament|constitution|inflation|\bgdp\b|trade|agreement|environment|wildlife|tiger|pollution|bank|tax|welfare|reform|biodiversity|sanction|diplomat|defence|nuclear|energy|renewable|agricultur|farmer|msp|health|education)/i;
+const day = (d: Date) => d.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Kolkata" });
+const MORE = "https://upscprepnotes.in/current-affairs?utm_source=telegram&utm_medium=channel&utm_campaign=daily_ca";
+
+/**
+ * Fallback 1, used when the AI is unavailable or fails its checks: the day's most exam-relevant headlines
+ * with links, picked by keyword and kept varied across sources. No summaries, so nothing can be wrong.
+ */
+export function headlineDigest(date: Date, cands: Candidate[]): { html: string; items: Item[] } {
+  const scored = cands
+    .map((c) => ({ c, score: (RELEVANT.test(c.title) ? 2 : 0) + (c.source === "PIB" ? 1 : 0) + (c.published ? 1 : 0) }))
+    .sort((a, b) => b.score - a.score || (b.c.published?.getTime() ?? 0) - (a.c.published?.getTime() ?? 0));
+  const picked: Candidate[] = [];
+  const perSource: Record<string, number> = {};
+  for (const { c } of scored) {
+    if ((perSource[c.source] ?? 0) >= 3) continue;
+    picked.push(c);
+    perSource[c.source] = (perSource[c.source] ?? 0) + 1;
+    if (picked.length === 5) break;
+  }
+  if (picked.length < 4) throw new Error("too few headlines for the fallback digest");
+  const items: Item[] = picked.map((c) => ({ title: clean(c.title), note: "", paper: "Other", url: c.url, source: c.source }));
+  const html =
+    `<b>Current affairs headlines, ${day(date)}</b>\n\n` +
+    items.map((it, i) => `${i + 1}. <a href="${esc(it.url)}">${esc(it.title)}</a> (${it.source})`).join("\n") +
+    `\n\nHeadlines only today. Read the full stories at the links.\n\nMore: ${MORE}`;
+  return { html, items };
+}
+
+/** Fallback 2, when no feed could be read at all: the stories from the last few digests, to revise. */
+export function reviseDigest(date: Date, recent: Item[]): { html: string; items: Item[] } {
+  const items = recent.slice(0, 5);
+  if (items.length < 3) throw new Error("no recent digests to revise");
+  const html =
+    `<b>Revise these, ${day(date)}</b>\n\nToday's feeds were unavailable, so here are stories from the last few days worth a second look.\n\n` +
+    items.map((it, i) => `${i + 1}. <a href="${esc(it.url)}">${esc(it.title)}</a> (${it.source})`).join("\n") +
+    `\n\nMore: ${MORE}`;
+  return { html, items: [] }; // not saved again, so the recap does not list them twice
+}
+
+export type DigestMode = "ai" | "headlines" | "revise";
+
+/** The full chain: AI digest, then headlines, then a revise post. Throws only if all three are impossible. */
+export async function buildDigest(date: Date, seen: Set<string>, recent: Item[]): Promise<{ html: string; items: Item[]; mode: DigestMode }> {
+  let cands: Candidate[] = [];
+  try {
+    cands = (await fetchCandidates()).filter((c) => !seen.has(c.url));
+  } catch {
+    /* handled below */
+  }
+  if (cands.length >= 8) {
+    try {
+      return { ...(await buildDailyCA(date, seen)), mode: "ai" };
+    } catch (e) {
+      console.error("AI digest failed, using headlines:", String(e).slice(0, 200));
+      try {
+        return { ...headlineDigest(date, cands), mode: "headlines" };
+      } catch {
+        /* fall through to revise */
+      }
+    }
+  }
+  return { ...reviseDigest(date, recent), mode: "revise" };
 }

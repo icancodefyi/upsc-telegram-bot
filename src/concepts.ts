@@ -1,4 +1,4 @@
-import Groq from "groq-sdk";
+import { askJson } from "./llm";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -24,16 +24,14 @@ async function wiki(title: string): Promise<{ extract: string; url: string; titl
 }
 
 async function write(topic: string, extract: string): Promise<{ what: string; why: string; remember: string } | null> {
-  const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
   const prompt = `Write a short UPSC study note on "${topic}" using ONLY the source text below. Do not add any fact, number, name or date that is not in the text.
 Return JSON: {"what": one or two sentences saying what it is, "why": one sentence on why it matters for governance, the economy, the environment or history (a general point, no new facts), "remember": one sentence with the single most useful fact from the text}.
 Each field at most 40 words. Plain, human wording. No em-dashes. Do not mention UPSC, exams or aspirants.
 
 Source text: ${extract.slice(0, 1800)}`;
-  for (const model of ["openai/gpt-oss-120b", "openai/gpt-oss-20b"]) {
+  for (let attempt = 0; attempt < 2; attempt++) {
     try {
-      const r = await groq.chat.completions.create({ model, temperature: 0.2, response_format: { type: "json_object" }, messages: [{ role: "user", content: prompt }] });
-      const j = JSON.parse(r.choices[0].message.content ?? "{}") as { what?: string; why?: string; remember?: string };
+      const j = (await askJson(prompt)) as { what?: string; why?: string; remember?: string };
       if (!j.what || !j.why || !j.remember) continue;
       const out = { what: clean(j.what), why: clean(j.why), remember: clean(j.remember) };
       const all = `${out.what} ${out.why} ${out.remember}`;

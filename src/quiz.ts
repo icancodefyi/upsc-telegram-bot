@@ -43,6 +43,14 @@ export async function postQuiz(state: Collection): Promise<string> {
     await sendToChannel(`${header}\n\n${esc(q.text)}`, { preview: false });
     question = "Pick the correct answer";
   }
-  await sendQuizPoll(question, q.options, q.answer, shortExplanation(q.explain));
+  try {
+    await sendQuizPoll(question, q.options, q.answer, shortExplanation(q.explain));
+  } catch (e) {
+    // If Telegram refuses the poll, post the same question as text with the answer hidden behind a spoiler.
+    console.error("poll failed, posting as text:", String(e).slice(0, 160));
+    const lines = q.options.map((o, i) => `${"ABCD"[i]}) ${esc(o)}`).join("\n");
+    const why = shortExplanation(q.explain);
+    await sendToChannel(`${question === "Pick the correct answer" ? "" : `<b>Prelims question, UPSC 2024 (Q${q.qno}, ${q.subject})</b>\n\n${esc(q.text)}\n\n`}${lines}\n\nAnswer: <tg-spoiler>${"ABCD"[q.answer]}${why ? `. ${esc(why)}` : ""}</tg-spoiler>`, { preview: false });
+  }
   return q.id;
 }

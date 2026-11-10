@@ -8,6 +8,8 @@ const FEEDS: { source: string; url: string }[] = [
   { source: "The Hindu", url: "https://www.thehindu.com/sci-tech/feeder/default.rss" },
   { source: "The Hindu", url: "https://www.thehindu.com/opinion/editorial/feeder/default.rss" },
   { source: "Indian Express", url: "https://indianexpress.com/section/explained/feed/" },
+  { source: "Indian Express", url: "https://indianexpress.com/section/india/feed/" },
+  { source: "The Hindu", url: "https://www.thehindu.com/opinion/lead/feeder/default.rss" },
 ];
 
 const UA = { "user-agent": "Mozilla/5.0" };
@@ -17,6 +19,7 @@ const decode = (s: string) =>
 const tag = (item: string, name: string) => decode(item.match(new RegExp(`<${name}[^>]*>([\\s\\S]*?)</${name}>`))?.[1] ?? "");
 
 export async function fetchCandidates(maxAgeHours = 30): Promise<Candidate[]> {
+  if (process.env.TEST_FAIL === "feeds") return [];
   const out: Candidate[] = [];
   await Promise.all(
     FEEDS.map(async (f) => {

@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import mongoose from "mongoose";
 import { sendToChannel } from "./telegram";
+import { claim, markFailed } from "./claim";
 import { conceptPost } from "./concepts";
 import { buildFacts } from "./facts";
 
@@ -63,26 +64,39 @@ const SLOTS: Slot[] = [
   },
 ];
 
+/** A tip from the pool, used when a slot's own content cannot be built. It cannot fail: it is a local file. */
+async function fallbackTip(): Promise<{ html: string }> {
+  const t = tips[(await next("tipextra")) % tips.length];
+  return { html: `<b>${esc(t.title)}</b>\n\n${esc(t.body)}${t.link ? `\n\n${fill(t.link, "tip")}` : ""}` };
+}
+
+/** The 7 AM post when the digest could not be built at all. */
+export async function emergencyMorning(): Promise<string> {
+  return (await fallbackTip()).html;
+}
+
 export async function runSlots(date: string, hm: string, now: Date, log: (...a: unknown[]) => void): Promise<void> {
   const col = mongoose.connection.db!.collection("tg_posts");
   for (const s of SLOTS) {
     if (hm < s.time || hm >= addHours(s.time, 2)) continue;
     const id = `${s.id}-${date}`;
-    const claim = await col.updateOne({ _id: id as never }, { $setOnInsert: { status: "sending", at: now } }, { upsert: true });
-    if (claim.upsertedCount === 0) continue;
+    if (!(await claim(col, id, now))) continue;
     try {
-      const post = await s.build();
+      // If the slot's own content cannot be built, post a tip instead of leaving a gap.
+      let post = await s.build().catch((e) => {
+        log("build failed, using a tip instead:", s.id, String(e).slice(0, 160));
+        return null;
+      });
+      let fallback = false;
       if (!post) {
-        await col.updateOne({ _id: id as never }, { $set: { status: "skipped" } });
-        log("skipped", id);
-        continue;
+        post = await fallbackTip();
+        fallback = true;
       }
       const mid = await sendToChannel(post.html, { preview: post.preview });
-      await col.updateOne({ _id: id as never }, { $set: { status: "sent", messageId: mid, sentAt: new Date() } });
-      log("sent", id, mid);
+      await col.updateOne({ _id: id as never }, { $set: { status: "sent", messageId: mid, sentAt: new Date(), ...(fallback ? { fallback: true } : {}) } });
+      log("sent", id, mid, fallback ? "(fallback tip)" : "");
     } catch (e) {
-      await col.updateOne({ _id: id as never }, { $set: { status: "failed", error: String(e).slice(0, 300) } });
-      log("FAILED", id, String(e));
+      await markFailed(col, id, e, log);
     }
   }
 }
