@@ -6,8 +6,17 @@
   "scripts": {
     "start": "tsx src/worker.ts",
     "dry-ca": "tsx src/dry-ca.ts",
-    "check": "tsx src/check-content.ts && tsc --noEmit"
+    "check": "tsc --noEmit && tsx src/check-content.ts",
+    "check:links": "tsx src/check-content.ts --links"
   },
-  "dependencies": { "dotenv": "^16.4.5", "groq-sdk": "^1.2.0", "mongoose": "^9.6.0", "tsx": "^4.19.0" },
-  "devDependencies": { "@types/node": "^22.0.0", "typescript": "^5.6.0" }
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "groq-sdk": "^1.2.0",
+    "mongoose": "^9.6.0",
+    "tsx": "^4.19.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0"
+  }
 }

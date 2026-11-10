@@ -19,7 +19,7 @@ State (what has been sent) lives in MongoDB, so restarts never double-post.
 ```bash
 cp .env.example .env     # fill in the four values
 npm install
-npm run check -- --links # validates the calendar and that every link returns 200
+npm run check:links # validates the calendar and that every link returns 200
 npm run dry-ca           # prints today's digest without posting
 DRY_RUN=1 npm start      # runs the worker, printing instead of posting
 npm start                # runs it for real
@@ -34,7 +34,7 @@ curl -fsSL https://raw.githubusercontent.com/icancodefyi/upsc-telegram-bot/main/
 journalctl -u upsc-telegram-bot -f
 ```
 
-Needs Node 20 or newer and `git`. To update: run the script again. To add a week of posts, put a new `content/week-N.json` in the repo, run `npm run check -- --links`, push, then run the script on the server. The worker re-reads the content folder every minute.
+Needs Node 20 or newer and `git`. To update: run the script again. To add a week of posts, put a new `content/week-N.json` in the repo, run `npm run check:links`, push, then run the script on the server. The worker re-reads the content folder every minute.
 
 ## Notes
 
