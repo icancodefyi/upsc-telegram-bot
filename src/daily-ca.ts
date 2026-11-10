@@ -30,8 +30,9 @@ function tighten(s: string): string {
 }
 
 /** Picks the three most exam-relevant stories, writes a grounded note for each, and returns the Telegram post. */
-export async function buildDailyCA(date: Date): Promise<{ html: string; items: Item[] }> {
-  const cands = await fetchCandidates();
+export async function buildDailyCA(date: Date, seen: Set<string> = new Set()): Promise<{ html: string; items: Item[] }> {
+  // Skip stories already posted on recent days.
+  const cands = (await fetchCandidates()).filter((c) => !seen.has(c.url));
   if (cands.length < 8) throw new Error(`only ${cands.length} candidates fetched`);
 
   // Keep the prompt small: free-tier models cap tokens per minute. Newest first.
@@ -59,7 +60,7 @@ export async function buildDailyCA(date: Date): Promise<{ html: string; items: I
   const day = date.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Kolkata" });
   const html =
     `<b>Current affairs, ${day}</b>\n\n` +
-    items.map((it, i) => `${i + 1}. <b>${esc(it.title)}</b> (${it.paper})\n${esc(it.note)}\n<a href="${it.url}">Read at ${it.source}</a>`).join("\n\n") +
+    items.map((it, i) => `${i + 1}. <b>${esc(it.title)}</b> (${it.paper})\n${esc(it.note)}\n<a href="${esc(it.url)}">Read at ${it.source}</a>`).join("\n\n") +
     `\n\nMore like this: https://upscprepnotes.in/current-affairs?utm_source=telegram&utm_medium=channel&utm_campaign=daily_ca`;
   if (/[—]/.test(html)) throw new Error("em-dash in output");
   return { html, items };

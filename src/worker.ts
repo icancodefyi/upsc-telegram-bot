@@ -56,7 +56,9 @@ async function tick() {
       const claim = await col.updateOne({ _id: caId as never }, { $setOnInsert: { status: "building", at: now } }, { upsert: true });
       if (claim.upsertedCount === 1) {
         try {
-          const { html, items } = await buildDailyCA(now);
+          const recent = await mongoose.connection.db!.collection("ca_daily").find({ date: { $lt: date } }).sort({ date: -1 }).limit(4).toArray();
+          const seen = new Set<string>(recent.flatMap((d) => (d.items as { url: string }[]).map((i) => i.url)));
+          const { html, items } = await buildDailyCA(now, seen);
           await col.updateOne({ _id: caId as never }, { $set: { status: "ready", html } });
           // Kept for the website: a weekly roundup is built from these.
           await mongoose.connection.db!.collection("ca_daily").updateOne({ _id: date as never }, { $set: { date, items, createdAt: now } }, { upsert: true });
