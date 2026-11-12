@@ -1,5 +1,5 @@
 import { chromium } from "playwright";
-import { collectReport, type Period } from "./site-report";
+import { collectReport, ymdOf, type Period } from "./site-report";
 import { renderHtml } from "./render-report";
 
 const FOOTER = `<div style="width:100%;padding:0 14mm;display:flex;justify-content:space-between;font-family:Helvetica,Arial,sans-serif;font-size:8px;color:#858a96"><span>UPSCPrepNotes · upscprepnotes.in</span><span>Page <span class="pageNumber"></span> of <span class="totalPages"></span></span></div>`;
@@ -23,7 +23,7 @@ export async function buildReportPdf(period: Period, now = new Date()): Promise<
     });
     const c = data.cur;
     const tag = data.period === "day" ? "daily" : data.period === "week" ? "weekly" : "monthly";
-    const stamp = data.range.start.toISOString().slice(0, 10);
+    const stamp = ymdOf(data.range.start); // the report's own date in India time
     const caption = `<b>${data.title}</b>\n${data.range.label}\n${c.visitors.toLocaleString("en-IN")} visitors · ${c.leads.toLocaleString("en-IN")} new leads · ₹${c.revenue.toLocaleString("en-IN")} revenue`;
     return { pdf: Buffer.from(pdf), filename: `upscprepnotes-${tag}-report-${stamp}.pdf`, caption };
   } finally {
