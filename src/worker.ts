@@ -8,8 +8,9 @@ import { postQuiz } from "./quiz";
 import { postRecap } from "./recap";
 import { runSlots, emergencyMorning } from "./slots";
 import { claim, markFailed } from "./claim";
-import { buildReport, type Period } from "./site-report";
-import { sendToAdmin } from "./telegram";
+import { buildReportPdf } from "./report-pdf";
+import type { Period } from "./site-report";
+import { sendDocumentToAdmin } from "./telegram";
 
 /**
  * Runs on the VPS. Every minute it posts whatever is due. Every job has a fallback, retries and a record in
@@ -27,8 +28,7 @@ const SEND_AT = "07:00";
 const EMERGENCY_AT = "08:30";
 const QUIZ_TIMES = (process.env.QUIZ_TIMES ?? "10:00").split(",").map((t) => t.trim()).filter(Boolean);
 const RECAP_TIME = process.env.RECAP_TIME || "18:00";
-const REPORT_TIME = process.env.REPORT_TIME || "22:15";
-const SITE_REPORT_TIME = process.env.SITE_REPORT_TIME || "08:00"; // weekly on Sunday, monthly on the 1st
+const SITE_REPORT_TIME = process.env.SITE_REPORT_TIME || "08:00"; // every morning; weekly on Sunday; monthly on the 1st
 
 const istParts = (d = new Date()) => {
   const f = new Intl.DateTimeFormat("en-CA", { timeZone: IST, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", weekday: "short", hourCycle: "h23" }).formatToParts(d);
@@ -145,28 +145,18 @@ async function tick() {
     }
   }
 
-  // 6. Short daily report to the owner (only if ADMIN_CHAT_ID is set).
-  if (process.env.ADMIN_CHAT_ID && hm >= REPORT_TIME && hm < addHours(REPORT_TIME, 1) && (await claim(col, `report-${date}`, now))) {
-    const since = new Date(date + "T00:00:00+05:30");
-    const sent = await col.countDocuments({ at: { $gte: since }, status: "sent" });
-    const failed = await col.countDocuments({ at: { $gte: since }, status: "failed" });
-    const digest = await col.findOne({ _id: `ca-${date}` as never });
-    await alertAdmin(`Daily report ${date}: ${sent} posts sent, ${failed} failed. Digest: ${digest?.status ?? "none"} (${digest?.mode ?? "n/a"}).`);
-    await col.updateOne({ _id: `report-${date}` as never }, { $set: { status: "sent" } });
-  }
-
-  // 7. Reports on the whole website, to the owner: Sunday morning (last 7 days) and the 1st of the month (last month).
+  // 6. Branded PDF reports to the owner on Telegram: every morning (yesterday), Sunday (last 7 days) and the 1st (last month).
   if (process.env.ADMIN_CHAT_ID && process.env.SITE_DB_NAME && hm >= SITE_REPORT_TIME && hm < addHours(SITE_REPORT_TIME, 2)) {
-    const due: { id: string; period: Period }[] = [];
+    const due: { id: string; period: Period }[] = [{ id: `site-daily-${date}`, period: "day" }];
     if (p.dow === "Sun") due.push({ id: `site-weekly-${date}`, period: "week" });
     if (date.endsWith("-01")) due.push({ id: `site-monthly-${date.slice(0, 7)}`, period: "month" });
     for (const job of due) {
       if (!(await claim(col, job.id, now))) continue;
       try {
-        const messages = await buildReport(job.period, now);
-        for (const m of messages) await sendToAdmin(m);
-        await col.updateOne({ _id: job.id as never }, { $set: { status: "sent", sentAt: new Date(), parts: messages.length } });
-        log("sent", job.id, messages.length, "message(s)");
+        const { pdf, filename, caption } = await buildReportPdf(job.period, now);
+        await sendDocumentToAdmin(pdf, filename, caption);
+        await col.updateOne({ _id: job.id as never }, { $set: { status: "sent", sentAt: new Date(), bytes: pdf.length } });
+        log("sent", job.id, filename);
       } catch (e) {
         await markFailed(col, job.id, e, log);
       }

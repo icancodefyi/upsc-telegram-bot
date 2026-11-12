@@ -124,6 +124,36 @@ export async function sendToAdmin(html: string): Promise<void> {
   }
 }
 
+/** Sends a file (a report PDF) to the owner's private chat. Throws on failure so the caller can retry. */
+export async function sendDocumentToAdmin(file: Buffer, filename: string, caption: string): Promise<void> {
+  const chat = process.env.ADMIN_CHAT_ID;
+  if (!chat) throw new Error("ADMIN_CHAT_ID is not set");
+  if (dry()) {
+    console.log(`[DRY_RUN] would send ${filename} (${file.length} bytes) to admin. Caption: ${caption}`);
+    return;
+  }
+  let last: unknown;
+  for (let i = 0; i < 3; i++) {
+    try {
+      const form = new FormData();
+      form.set("chat_id", chat);
+      form.set("caption", caption);
+      form.set("parse_mode", "HTML");
+      form.set("document", new Blob([new Uint8Array(file)], { type: "application/pdf" }), filename);
+      const res = await fetch(`https://api.telegram.org/bot${TOKEN()}/sendDocument`, { method: "POST", body: form, signal: AbortSignal.timeout(60000) });
+      const j = (await res.json()) as { ok: boolean; description?: string; error_code?: number };
+      if (j.ok) return;
+      last = new TgError(j.description ?? "telegram error", j.error_code ?? res.status);
+      if ((j.error_code ?? res.status) < 500 && (j.error_code ?? res.status) !== 429) throw last;
+    } catch (e) {
+      if (e instanceof TgError && e.code < 500 && e.code !== 429) throw e;
+      last = e;
+    }
+    await sleep(3000 * (i + 1));
+  }
+  throw last;
+}
+
 /** A private message to the owner when something needs attention. Never throws. Needs ADMIN_CHAT_ID. */
 export async function alertAdmin(text: string): Promise<void> {
   console.error("ALERT:", text);

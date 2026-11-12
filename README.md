@@ -81,3 +81,19 @@ Needs Node 20 or newer and `git`. To update: run the script again. To add a week
 - The bot must be an admin of the channel with permission to post.
 - Never commit `.env`. It is git-ignored.
 - Current-affairs notes are machine-written from the source text. Read the first week before trusting it unattended.
+
+## Reports to the owner (PDF on Telegram)
+
+With `ADMIN_CHAT_ID` and `SITE_DB_NAME` set, the bot sends branded PDF reports about the whole website to your private chat:
+
+| When (IST) | Report | Covers |
+| --- | --- | --- |
+| Every day, 08:00 | Daily | Yesterday, by hour |
+| Sunday, 08:00 | Weekly | The last 7 days |
+| The 1st, 08:00 | Monthly | The last calendar month |
+
+Traffic, free requests and who is asking, sales and why people left checkout, the quiz, the Telegram channel and site health, read from the site's own database. Visitor comparisons start once a full earlier period has been tracked.
+Retries work like every other job (3 attempts, 10 minutes apart, then an alert). `SITE_REPORT_TIME` changes the hour.
+
+Build one by hand: `npm run report -- day|week|month` writes a PDF to `reports/`; add `--send` to also deliver it.
+The PDFs are drawn with a headless Chromium. On a new server run `npx playwright install --with-deps chromium` once, and set `PLAYWRIGHT_BROWSERS_PATH` to a folder the bot user can read.
