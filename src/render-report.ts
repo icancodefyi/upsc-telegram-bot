@@ -153,17 +153,37 @@ function weekRows(d: ReportData): string[][] {
 
 export function renderHtml(d: ReportData): string {
   const { cur: c, prev: p, comparable } = d;
-  const periodWord = d.period === "day" ? "day" : d.period === "week" ? "week" : "month";
+  const dDB = (a: number, b: number) => (d.hasPrevious ? delta(a, b) : "");
+  const dT = (a: number, b: number) => (d.hasPrevious && comparable ? delta(a, b) : "");
+  const periodWord = d.kind === "day" || d.kind === "today" ? "day" : d.kind === "week" ? "week" : d.kind === "month" ? "month" : "period";
+  const hourly = d.bucket === "hour";
   const pose = c.paid > 0 ? "celebrating" : d.flags.length >= 2 ? "thinking" : "hello";
   const head = (n: string) => `<div class="head"><div class="brand"><img src="${dataUri("logo.svg", "image/svg+xml")}" alt="">UPSCPrepNotes</div><div class="head-r">${esc(d.title)} · ${esc(d.range.label)}${n ? ` · ${n}` : ""}</div></div>`;
   const big = true; // the same three-page layout for the daily, weekly and monthly reports
-  const unit = d.period === "day" ? "Visitors by hour (IST)" : d.period === "week" ? "Visitors by day" : "Visitors by day of the month";
+  const unit = d.bucket === "hour" ? "Visitors by hour (IST)" : d.bucket === "day" ? "Visitors by day" : "Visitors by week";
 
-  const note = comparable ? "" : `Comparisons start once a full earlier ${periodWord} has been tracked (tracking began ${dayLabel(d.trackedFrom!)}).`;
+  // Our tracker has a start date: say so when it matters, instead of showing misleading zeros or jumps.
+  const trackedLate = !!d.trackedFrom && d.trackedFrom > d.range.start;
+  const note = trackedLate
+    ? `Visitor and page numbers count from ${dayLabel(d.trackedFrom!)}, when tracking began. Leads, sales and requests cover the whole period.`
+    : d.hasPrevious && !comparable
+      ? `Visitor comparisons start once a full earlier ${periodWord} has been tracked (tracking began ${dayLabel(d.trackedFrom!)}).`
+      : "";
   const answered = c.leadsFull;
   const leftTotal = Object.values(c.left).reduce((a, b) => a + b, 0);
   const reasonText: Record<string, string> = { expensive: "It felt too expensive", failed: "The payment did not work", unsure: "I am not sure yet" };
   const reasons: Count[] = Object.entries(c.left).sort((a, b) => b[1] - a[1]).map(([k, n]) => ({ label: reasonText[k] ?? k, n }));
+
+  // Our tracker began after the start of a long range: draw the visitor chart only from when it has data.
+  let visValues = d.series.visitors;
+  let visLabels = d.series.labels;
+  if (trackedLate) {
+    const first = visValues.findIndex((v) => v > 0);
+    if (first > 0) {
+      visValues = visValues.slice(first);
+      visLabels = visLabels.slice(first);
+    }
+  }
 
   // ---- page 1: the summary
   const p1 = `
@@ -172,18 +192,18 @@ export function renderHtml(d: ReportData): string {
     <div>
       <h1>${esc(d.title)}</h1>
       <div class="range">${esc(d.range.label)}</div>
-      <div class="cmp">Compared with ${esc(d.previous.label)}${note ? ` · ${esc(note)}` : ""}</div>
+      <div class="cmp">${d.previous ? `Compared with ${esc(d.previous.label)}` : "Everything to date, no earlier period to compare with"}${note ? ` · ${esc(note)}` : ""}</div>
     </div>
     <img src="${gilu(pose)}" alt="">
   </div>
   <div class="tiles">
-    ${tile("Visitors", num(c.visitors), delta(c.visitors, p.visitors, comparable), `${num(c.views)} page views`)}
-    ${tile("Visitors from India", num(c.india), delta(c.india, p.india, comparable), c.visitors ? `${Math.round((c.india / c.visitors) * 100)}% of all` : "")}
-    ${tile("New leads", num(c.leads), delta(c.leads, p.leads), `${num(answered)} with full answers`)}
-    ${tile("Revenue", rupees(c.revenue), delta(c.revenue, p.revenue), `${num(c.paid)} paid · ${num(c.ordersStarted)} started`)}
+    ${tile("Visitors", num(c.visitors), dT(c.visitors, p.visitors), `${num(c.views)} page views`)}
+    ${tile("Visitors from India", num(c.india), dT(c.india, p.india), c.visitors ? `${Math.round((c.india / c.visitors) * 100)}% of all` : "")}
+    ${tile("New leads", num(c.leads), dDB(c.leads, p.leads), `${num(answered)} with full answers`)}
+    ${tile("Revenue", rupees(c.revenue), dDB(c.revenue, p.revenue), `${num(c.paid)} paid · ${num(c.ordersStarted)} started`)}
   </div>
   <section class="watch"><h3>Worth a look</h3>${d.flags.length ? `<ul>${d.flags.map((f) => `<li>${esc(f)}</li>`).join("")}</ul>` : `<p style="margin-top:6px;font-size:12px">Nothing unusual this ${periodWord}.</p>`}</section>
-  ${card(unit, bars(d.series.visitors, d.series.labels, { height: 122, every: d.period === "day" ? 3 : undefined }), d.busiest ? `Busiest: ${d.busiest.day}, ${num(d.busiest.n)} visitors` : "")}
+  ${card(unit, bars(visValues, visLabels, { height: 122, every: hourly ? 3 : undefined }), d.busiest ? `Busiest${d.bucket === "week" ? " week, from" : ":"} ${d.busiest.day}, ${num(d.busiest.n)} visitors` : "")}
   `;
 
   // ---- traffic (follows the summary on the first page)
@@ -199,12 +219,12 @@ export function renderHtml(d: ReportData): string {
   const p3 = `
   ${big ? head("Free requests") : ""}
   <div class="tiles" style="grid-template-columns:repeat(4,1fr)">
-    ${tile("New leads", num(c.leads), delta(c.leads, p.leads))}
+    ${tile("New leads", num(c.leads), dDB(c.leads, p.leads))}
     ${tile("With full answers", num(answered), "", answered && c.leads ? `${Math.round((answered / c.leads) * 100)}% of leads` : "")}
-    ${tile("Answer copies", num(c.copyLeads), delta(c.copyLeads, p.copyLeads))}
-    ${tile("Free materials", num(c.materialLeads), delta(c.materialLeads, p.materialLeads))}
+    ${tile("Answer copies", num(c.copyLeads), dDB(c.copyLeads, p.copyLeads))}
+    ${tile("Free materials", num(c.materialLeads), dDB(c.materialLeads, p.materialLeads))}
   </div>
-  ${card("Leads over time", bars(d.series.leadsFull, d.series.labels, { stack: d.series.leadsEmail, height: 150, every: d.period === "day" ? 3 : undefined }) + `<div class="legend"><span><i class="dot" style="background:${C.accent}"></i>With full answers</span><span><i class="dot" style="background:${C.accentLight}"></i>Email only</span></div>`)}
+  ${card("Leads over time", bars(d.series.leadsFull, d.series.labels, { stack: d.series.leadsEmail, height: 150, every: hourly ? 3 : undefined }) + `<div class="legend"><span><i class="dot" style="background:${C.accent}"></i>With full answers</span><span><i class="dot" style="background:${C.accentLight}"></i>Email only</span></div>`)}
   <div class="grid2" style="margin-bottom:14px">
     ${card("Where are they in their preparation?", hbars(who.stage, { width: 24, empty: "No answered leads in this period." }))}
     ${card("Which attempt?", hbars(who.attempt, { width: 24, empty: "No answered leads in this period." }))}
@@ -217,7 +237,7 @@ export function renderHtml(d: ReportData): string {
     ${card("Most requested answer copies", hbars(who.topCopies, { width: 28, empty: "None in this period." }))}
     ${card("Most requested free materials", hbars(who.topMaterials, { width: 28, empty: "None in this period." }))}
   </div>
-  ${d.period === "month" ? `<p class="note" style="margin-top:10px">All leads to date: ${num(d.leadsToDate)}</p>` : ""}
+  ${d.kind === "month" || d.kind === "all" ? `<p class="note" style="margin-top:10px">All leads to date: ${num(d.leadsToDate)}</p>` : ""}
   `;
 
   // ---- page 4: sales and everything else
@@ -225,18 +245,19 @@ export function renderHtml(d: ReportData): string {
   ${big ? head("Sales and the rest") : ""}
   <div class="grid2" style="margin-bottom:14px">
     ${card("Sales", `<div class="kv">
-      <div><span>Checkouts started</span><span>${num(c.ordersStarted)} ${delta(c.ordersStarted, p.ordersStarted)}</span></div>
-      <div><span>Paid</span><span>${num(c.paid)} ${delta(c.paid, p.paid)}</span></div>
-      <div><span>Revenue</span><span>${rupees(c.revenue)} ${delta(c.revenue, p.revenue)}</span></div>
+      <div><span>Checkouts started</span><span>${num(c.ordersStarted)} ${dDB(c.ordersStarted, p.ordersStarted)}</span></div>
+      <div><span>Paid</span><span>${num(c.paid)} ${dDB(c.paid, p.paid)}</span></div>
+      <div><span>Revenue</span><span>${rupees(c.revenue)} ${dDB(c.revenue, p.revenue)}</span></div>
       <div><span>Left unpaid</span><span>${num(Math.max(0, c.ordersStarted - c.paid))}</span></div>
       <div><span>Reminder emails sent</span><span>${num(c.reminders)}</span></div>
       <div><span>Payment window failures</span><span>${num(c.payFailures)}</span></div>
     </div>`)}
     ${card("Why people left checkout", hbars(reasons, { width: 26, empty: "Nobody has told us yet." }), leftTotal ? `${leftTotal} answered from the reminder email` : "From the one-tap answers in the reminder email")}
   </div>
-  ${d.period === "month" ? card("By week", table(["Period", "Page views", "Leads", "Checkouts", "Paid"], weekRows(d))) : ""}
+  ${d.kind === "month" ? card("By week", table(["Period", "Page views", "Leads", "Checkouts", "Paid"], weekRows(d))) : ""}
+  ${d.months.length > 1 ? card("By month", table(["Month", "Leads", "Checkouts", "Paid", "Revenue"], d.months.map((m) => [esc(m.month), num(m.leads), num(m.checkouts), num(m.paid), rupees(m.revenue)]))) : ""}
   <div class="grid2" style="margin-bottom:14px">
-    ${card("Daily quiz", `<div class="kv"><div><span>Quizzes finished</span><span>${num(c.quizPlays)} ${delta(c.quizPlays, p.quizPlays, comparable)}</span></div><div><span>Different players</span><span>${num(c.quizPlayers)} ${delta(c.quizPlayers, p.quizPlayers, comparable)}</span></div></div>`)}
+    ${card("Daily quiz", `<div class="kv"><div><span>Quizzes finished</span><span>${num(c.quizPlays)} ${dT(c.quizPlays, p.quizPlays)}</span></div><div><span>Different players</span><span>${num(c.quizPlayers)} ${dT(c.quizPlayers, p.quizPlayers)}</span></div></div>`)}
     ${card("Telegram channel", `<div class="kv">
       ${d.members ? `<div><span>Members</span><span>${num(d.members.now)}${d.members.change ? ` (${d.members.change > 0 ? "+" : ""}${d.members.change} since last report)` : ""}</span></div>` : ""}
       <div><span>Posts sent</span><span>${num(d.bot.sent)}</span></div>

@@ -124,6 +124,24 @@ export async function sendToAdmin(html: string): Promise<void> {
   }
 }
 
+export type TgMessage = { update_id: number; message?: { text?: string; chat: { id: number }; message_id: number } };
+
+/** Long-polls for new messages. The wait is kept under the 20 second call timeout. */
+export async function getUpdates(offset: number): Promise<TgMessage[]> {
+  return call<TgMessage[]>("getUpdates", { offset, timeout: 15, allowed_updates: ["message"] }, 1);
+}
+
+/** A plain-text or HTML reply to the owner. Never throws. */
+export async function replyToAdmin(html: string): Promise<void> {
+  const chat = process.env.ADMIN_CHAT_ID;
+  if (!chat || dry()) return;
+  try {
+    await call("sendMessage", { chat_id: chat, text: html.slice(0, 4000), parse_mode: "HTML", disable_web_page_preview: true }, 2);
+  } catch {
+    /* nothing more we can do */
+  }
+}
+
 /** Sends a file (a report PDF) to the owner's private chat. Throws on failure so the caller can retry. */
 export async function sendDocumentToAdmin(file: Buffer, filename: string, caption: string): Promise<void> {
   const chat = process.env.ADMIN_CHAT_ID;

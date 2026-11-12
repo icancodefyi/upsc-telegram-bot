@@ -9,7 +9,8 @@ import { postRecap } from "./recap";
 import { runSlots, emergencyMorning } from "./slots";
 import { claim, markFailed } from "./claim";
 import { buildReportPdf } from "./report-pdf";
-import type { Period } from "./site-report";
+import { scheduledSpec } from "./site-report";
+import { startCommandLoop } from "./commands";
 import { sendDocumentToAdmin } from "./telegram";
 
 /**
@@ -147,13 +148,13 @@ async function tick() {
 
   // 6. Branded PDF reports to the owner on Telegram: every morning (yesterday), Sunday (last 7 days) and the 1st (last month).
   if (process.env.ADMIN_CHAT_ID && process.env.SITE_DB_NAME && hm >= SITE_REPORT_TIME && hm < addHours(SITE_REPORT_TIME, 2)) {
-    const due: { id: string; period: Period }[] = [{ id: `site-daily-${date}`, period: "day" }];
+    const due: { id: string; period: "day" | "week" | "month" }[] = [{ id: `site-daily-${date}`, period: "day" }];
     if (p.dow === "Sun") due.push({ id: `site-weekly-${date}`, period: "week" });
     if (date.endsWith("-01")) due.push({ id: `site-monthly-${date.slice(0, 7)}`, period: "month" });
     for (const job of due) {
       if (!(await claim(col, job.id, now))) continue;
       try {
-        const { pdf, filename, caption } = await buildReportPdf(job.period, now);
+        const { pdf, filename, caption } = await buildReportPdf(scheduledSpec(job.period, now));
         await sendDocumentToAdmin(pdf, filename, caption);
         await col.updateOne({ _id: job.id as never }, { $set: { status: "sent", sentAt: new Date(), bytes: pdf.length } });
         log("sent", job.id, filename);
@@ -172,6 +173,7 @@ let running = false;
 (async () => {
   await mongoose.connect(process.env.MONGODB_URI!, { dbName: process.env.MONGODB_DB || "upscprepnotes", serverSelectionTimeoutMS: 15000 });
   log("worker started");
+  startCommandLoop(log); // the owner can ask for reports and status on Telegram
   const loop = async () => {
     if (running) return; // never run two ticks at once
     running = true;

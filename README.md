@@ -95,5 +95,17 @@ With `ADMIN_CHAT_ID` and `SITE_DB_NAME` set, the bot sends branded PDF reports a
 Traffic, free requests and who is asking, sales and why people left checkout, the quiz, the Telegram channel and site health, read from the site's own database. Visitor comparisons start once a full earlier period has been tracked.
 Retries work like every other job (3 attempts, 10 minutes apart, then an alert). `SITE_REPORT_TIME` changes the hour.
 
+Ask for one any time on Telegram (only your own chat is answered):
+
+| Send | You get |
+| --- | --- |
+| `/report today` | Today so far |
+| `/report yesterday`, `/report week`, `/report month` | The same reports as the scheduled ones |
+| `/report thismonth` | The month so far |
+| `/report all` | Everything to date |
+| `/report 2026-11-01 2026-11-10` | A range of days, both included (one date gives one day) |
+| `/status` | Today so far, in a few lines |
+| `/help` | The list |
+
 Build one by hand: `npm run report -- day|week|month` writes a PDF to `reports/`; add `--send` to also deliver it.
 The PDFs are drawn with a headless Chromium. On a new server run `npx playwright install --with-deps chromium` once, and set `PLAYWRIGHT_BROWSERS_PATH` to a folder the bot user can read.

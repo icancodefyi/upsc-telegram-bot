@@ -3,17 +3,22 @@ import type { Db, Document } from "mongodb";
 import { channelMemberCount } from "./telegram";
 
 /**
- * Collects the numbers for the daily, weekly and monthly reports from the site's own database
- * (its tracker, leads, orders and reminder emails) and from this bot's own records.
- * Rendering is in render-report.ts. Nothing here depends on any hosting provider.
+ * Collects the numbers for the reports from the site's own database (its tracker, leads, orders and
+ * reminder emails) and from this bot's own records. Rendering is in render-report.ts.
+ * Nothing here depends on any hosting provider.
  */
 
 const IST_OFFSET_MS = 330 * 60_000;
+const DAY_MS = 86_400_000;
 const OWN_HOSTS = /(^|\.)upscprepnotes\.in$/;
 
-export type Period = "day" | "week" | "month";
 export type Range = { start: Date; end: Date; label: string };
 export type Count = { label: string; n: number };
+export type Bucket = "hour" | "day" | "week";
+export type Kind = "day" | "week" | "month" | "today" | "custom" | "all";
+
+/** What a report covers: the range, what to compare it with, and how to draw its charts. */
+export type Spec = { kind: Kind; title: string; current: Range; previous: Range | null; bucket: Bucket };
 
 // ---------- dates (all in India time) ----------
 
@@ -26,27 +31,25 @@ const MONTHS_LONG = ["January", "February", "March", "April", "May", "June", "Ju
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const ist = (d: Date) => new Date(d.getTime() + IST_OFFSET_MS);
 export const dayLabel = (d: Date) => `${ist(d).getUTCDate()} ${MONTHS[ist(d).getUTCMonth()]}`;
-const dayLong = (d: Date) => `${WEEKDAYS[ist(d).getUTCDay()]} ${dayLabel(d)} ${ist(d).getUTCFullYear()}`;
+const dayYear = (d: Date) => `${dayLabel(d)} ${ist(d).getUTCFullYear()}`;
+const dayLong = (d: Date) => `${WEEKDAYS[ist(d).getUTCDay()]} ${dayYear(d)}`;
+const bucketFor = (r: Range): Bucket => {
+  const days = (r.end.getTime() - r.start.getTime()) / DAY_MS;
+  return days <= 1.01 ? "hour" : days <= 62 ? "day" : "week";
+};
 
-/** The period that has just finished, and the one before it of the same length. */
-export function rangesFor(period: Period, now = new Date()): { current: Range; previous: Range } {
+/** The scheduled reports: the day, the 7 days or the calendar month that has just finished. */
+export function scheduledSpec(kind: "day" | "week" | "month", now = new Date()): Spec {
   const today = ymdOf(now);
   const end = istMidnight(today);
-  const dayMs = 86_400_000;
-  if (period === "day") {
-    const start = new Date(end.getTime() - dayMs);
-    return {
-      current: { start, end, label: dayLong(start) },
-      previous: { start: new Date(start.getTime() - dayMs), end: start, label: "the day before" },
-    };
+  if (kind === "day") {
+    const start = new Date(end.getTime() - DAY_MS);
+    return { kind, title: "Daily report", bucket: "hour", current: { start, end, label: dayLong(start) }, previous: { start: new Date(start.getTime() - DAY_MS), end: start, label: "the day before" } };
   }
-  if (period === "week") {
-    const start = new Date(end.getTime() - 7 * dayMs);
-    const last = new Date(end.getTime() - dayMs);
-    return {
-      current: { start, end, label: `${dayLabel(start)} to ${dayLabel(last)} ${ist(last).getUTCFullYear()}` },
-      previous: { start: new Date(start.getTime() - 7 * dayMs), end: start, label: "the 7 days before" },
-    };
+  if (kind === "week") {
+    const start = new Date(end.getTime() - 7 * DAY_MS);
+    const last = new Date(end.getTime() - DAY_MS);
+    return { kind, title: "Weekly report", bucket: "day", current: { start, end, label: `${dayLabel(start)} to ${dayYear(last)}` }, previous: { start: new Date(start.getTime() - 7 * DAY_MS), end: start, label: "the 7 days before" } };
   }
   const [y, m] = today.split("-").map(Number);
   const pm = m === 1 ? 12 : m - 1;
@@ -55,9 +58,71 @@ export function rangesFor(period: Period, now = new Date()): { current: Range; p
   const ppm = pm === 1 ? 12 : pm - 1;
   const ppy = pm === 1 ? py - 1 : py;
   return {
+    kind, title: "Monthly report", bucket: "day",
     current: { start, end: istMidnight(`${y}-${pad(m)}-01`), label: `${MONTHS_LONG[pm - 1]} ${py}` },
     previous: { start: istMidnight(`${ppy}-${pad(ppm)}-01`), end: start, label: MONTHS_LONG[ppm - 1] },
   };
+}
+
+const isYmd = (s: string) => /^\d{4}-\d{2}-\d{2}$/.test(s) && !Number.isNaN(istMidnight(s).getTime());
+
+/**
+ * Reads a request such as "today", "yesterday", "week", "month", "thismonth", "all",
+ * "2026-11-05" or "2026-11-01 2026-11-10" (both days included). Throws a readable message if it cannot.
+ */
+export async function commandSpec(args: string[], now = new Date()): Promise<Spec> {
+  const a = args.map((x) => x.trim().toLowerCase()).filter(Boolean);
+  const what = a[0] ?? "week";
+  const todayStart = istMidnight(ymdOf(now));
+
+  if (what === "day" || what === "week" || what === "month") return scheduledSpec(what, now);
+  if (what === "yesterday") return scheduledSpec("day", now);
+  if (what === "today") {
+    const elapsed = now.getTime() - todayStart.getTime();
+    const yStart = new Date(todayStart.getTime() - DAY_MS);
+    return {
+      kind: "today", title: "Today so far", bucket: "hour",
+      current: { start: todayStart, end: now, label: `${dayLong(todayStart)}, until now` },
+      previous: { start: yStart, end: new Date(yStart.getTime() + elapsed), label: "yesterday at the same time" },
+    };
+  }
+  if (what === "thismonth") {
+    const [y, m] = ymdOf(now).split("-").map(Number);
+    const start = istMidnight(`${y}-${pad(m)}-01`);
+    return { kind: "custom", title: "Month so far", bucket: "day", current: { start, end: now, label: `${MONTHS_LONG[m - 1]} ${y}, until now` }, previous: null };
+  }
+  if (what === "all") {
+    const db = await siteDb();
+    const firsts = await Promise.all([
+      db.collection("tracking").find({}, { projection: { ts: 1 } }).sort({ ts: 1 }).limit(1).toArray(),
+      db.collection("freedownloadleads").find({}, { projection: { createdAt: 1 } }).sort({ createdAt: 1 }).limit(1).toArray(),
+      db.collection("freematerialleads").find({}, { projection: { createdAt: 1 } }).sort({ createdAt: 1 }).limit(1).toArray(),
+      db.collection("orders").find({}, { projection: { createdAt: 1 } }).sort({ createdAt: 1 }).limit(1).toArray(),
+    ]);
+    const times = firsts.flat().map((x) => (x.ts ?? x.createdAt) as Date).filter(Boolean);
+    const earliest = times.length ? new Date(Math.min(...times.map((t) => t.getTime()))) : todayStart;
+    const start = istMidnight(ymdOf(earliest));
+    return { kind: "all", title: "Overall report", bucket: "week", current: { start, end: now, label: `${dayYear(start)} to ${dayYear(now)}` }, previous: null };
+  }
+  if (isYmd(what)) {
+    const start = istMidnight(what);
+    const lastDay = a[1] && isYmd(a[1]) ? istMidnight(a[1]) : start;
+    if (a[1] && !isYmd(a[1])) throw new Error(`I could not read "${a[1]}" as a date. Use YYYY-MM-DD, for example 2026-11-10.`);
+    if (lastDay < start) throw new Error("The end date is before the start date.");
+    let end = new Date(lastDay.getTime() + DAY_MS);
+    if (end > now) end = now;
+    if (start >= now) throw new Error("That start date is in the future.");
+    const days = (end.getTime() - start.getTime()) / DAY_MS;
+    if (days > 400) throw new Error("That range is longer than 400 days. Try a shorter one, or ask for: all");
+    const sameDay = ymdOf(start) === ymdOf(new Date(end.getTime() - 1));
+    const label = sameDay ? dayLong(start) : `${dayYear(start)} to ${dayYear(new Date(end.getTime() - 1))}`;
+    const len = end.getTime() - start.getTime();
+    return {
+      kind: "custom", title: "Report", bucket: bucketFor({ start, end, label }), current: { start, end, label },
+      previous: { start: new Date(start.getTime() - len), end: start, label: "the same length of time before" },
+    };
+  }
+  throw new Error(`I did not understand "${what}".`);
 }
 
 // ---------- the site's database ----------
@@ -100,7 +165,7 @@ async function uniq(db: Db, match: Document): Promise<number> {
   return (r[0]?.n as number) ?? 0;
 }
 
-async function statsFor(db: Db, r: Range): Promise<Stats> {
+export async function statsFor(db: Db, r: Range): Promise<Stats> {
   const t = db.collection("tracking");
   const view = { event: "page_view", path: PAGE_EXCLUDE, ...inRange("ts", r) };
   const [visitors, india, views, quizPlays, quizPlayers, jsErrors, checkoutFailed] = await Promise.all([
@@ -146,6 +211,13 @@ async function statsFor(db: Db, r: Range): Promise<Stats> {
   };
 }
 
+/** A quick snapshot of today so far, for the /status command. */
+export async function quickStatus(now = new Date()): Promise<{ label: string; s: Stats }> {
+  const db = await siteDb();
+  const start = istMidnight(ymdOf(now));
+  return { label: `${dayLong(start)}, until ${ist(now).toISOString().slice(11, 16)}`, s: await statsFor(db, { start, end: now, label: "" }) };
+}
+
 const cleanPath = (p: string) => p.replace(/\/$/, "") || "/";
 const hostOf = (ref: string): string => {
   try {
@@ -167,7 +239,7 @@ async function topPages(db: Db, r: Range, limit: number): Promise<Count[]> {
 }
 
 async function topSources(db: Db, r: Range, limit: number): Promise<Count[]> {
-  const rows = await db.collection("tracking").find({ event: "session_start", ...inRange("ts", r) }, { projection: { referrer: 1, utm: 1 } }).limit(20000).toArray();
+  const rows = await db.collection("tracking").find({ event: "session_start", ...inRange("ts", r) }, { projection: { referrer: 1, utm: 1 } }).limit(50000).toArray();
   const count: Record<string, number> = {};
   for (const x of rows) {
     const utm = (x.utm as Record<string, string> | undefined)?.source;
@@ -204,39 +276,46 @@ async function leadBreakdown(db: Db, r: Range): Promise<LeadBreakdown> {
 
 export type Series = { labels: string[]; visitors: number[]; views: number[]; leadsFull: number[]; leadsEmail: number[]; orders: number[]; paid: number[] };
 
-/** Per-hour (one day) or per-day (week, month) numbers for the charts. */
-async function seriesFor(db: Db, period: Period, r: Range): Promise<Series> {
-  const hourly = period === "day";
-  const fmt = hourly ? "%H" : "%Y-%m-%d";
+/** Per-hour, per-day or per-week numbers for the charts. */
+async function seriesFor(db: Db, bucket: Bucket, r: Range): Promise<Series> {
   const keys: string[] = [];
   const labels: string[] = [];
-  if (hourly) {
+  let keyOf: (f: string) => Document;
+  if (bucket === "hour") {
     for (let h = 0; h < 24; h++) {
       keys.push(pad(h));
       labels.push(pad(h));
     }
-  } else {
-    for (let t = r.start.getTime(); t < r.end.getTime(); t += 86_400_000) {
+    keyOf = (f) => ({ $dateToString: { format: "%H", date: f, timezone: "Asia/Kolkata" } });
+  } else if (bucket === "day") {
+    for (let t = r.start.getTime(); t < r.end.getTime(); t += DAY_MS) {
       const d = new Date(t);
       keys.push(ymdOf(d));
-      labels.push(period === "week" ? `${WEEKDAYS[ist(d).getUTCDay()]} ${ist(d).getUTCDate()}` : String(ist(d).getUTCDate()));
+      labels.push(r.end.getTime() - r.start.getTime() <= 9 * DAY_MS ? `${WEEKDAYS[ist(d).getUTCDay()]} ${ist(d).getUTCDate()}` : String(ist(d).getUTCDate()));
     }
+    keyOf = (f) => ({ $dateToString: { format: "%Y-%m-%d", date: f, timezone: "Asia/Kolkata" } });
+  } else {
+    const weeks = Math.ceil((r.end.getTime() - r.start.getTime()) / (7 * DAY_MS));
+    for (let i = 0; i < weeks; i++) {
+      keys.push(String(i));
+      labels.push(dayLabel(new Date(r.start.getTime() + i * 7 * DAY_MS)));
+    }
+    keyOf = (f) => ({ $toString: { $floor: { $divide: [{ $subtract: [f, r.start] }, 7 * DAY_MS] } } });
   }
   const idx = new Map(keys.map((k, i) => [k, i]));
   const zero = () => keys.map(() => 0);
   const out: Series = { labels, visitors: zero(), views: zero(), leadsFull: zero(), leadsEmail: zero(), orders: zero(), paid: zero() };
-  const bucket = (f: string) => ({ $dateToString: { format: fmt, date: f, timezone: "Asia/Kolkata" } });
 
   const trackView = { event: "page_view", path: PAGE_EXCLUDE, ...inRange("ts", r) };
   const [vis, vw, copy, material, orders] = await Promise.all([
-    db.collection("tracking").aggregate([{ $match: trackView }, { $group: { _id: { b: bucket("$ts"), v: "$visitorId" } } }, { $group: { _id: "$_id.b", n: { $sum: 1 } } }]).toArray(),
-    db.collection("tracking").aggregate([{ $match: trackView }, { $group: { _id: bucket("$ts"), n: { $sum: 1 } } }]).toArray(),
-    db.collection("freedownloadleads").aggregate([{ $match: inRange("createdAt", r) }, { $group: { _id: bucket("$createdAt"), n: { $sum: 1 }, full: { $sum: { $cond: [{ $ifNull: ["$profile.stage", false] }, 1, 0] } } } }]).toArray(),
-    db.collection("freematerialleads").aggregate([{ $match: inRange("createdAt", r) }, { $group: { _id: bucket("$createdAt"), n: { $sum: 1 }, full: { $sum: { $cond: [{ $ifNull: ["$profile.stage", false] }, 1, 0] } } } }]).toArray(),
-    db.collection("orders").aggregate([{ $match: inRange("createdAt", r) }, { $group: { _id: bucket("$createdAt"), n: { $sum: 1 }, paid: { $sum: { $cond: [{ $in: ["$status", ["paid", "delivered"]] }, 1, 0] } } } }]).toArray(),
+    db.collection("tracking").aggregate([{ $match: trackView }, { $group: { _id: { b: keyOf("$ts"), v: "$visitorId" } } }, { $group: { _id: "$_id.b", n: { $sum: 1 } } }]).toArray(),
+    db.collection("tracking").aggregate([{ $match: trackView }, { $group: { _id: keyOf("$ts"), n: { $sum: 1 } } }]).toArray(),
+    db.collection("freedownloadleads").aggregate([{ $match: inRange("createdAt", r) }, { $group: { _id: keyOf("$createdAt"), n: { $sum: 1 }, full: { $sum: { $cond: [{ $ifNull: ["$profile.stage", false] }, 1, 0] } } } }]).toArray(),
+    db.collection("freematerialleads").aggregate([{ $match: inRange("createdAt", r) }, { $group: { _id: keyOf("$createdAt"), n: { $sum: 1 }, full: { $sum: { $cond: [{ $ifNull: ["$profile.stage", false] }, 1, 0] } } } }]).toArray(),
+    db.collection("orders").aggregate([{ $match: inRange("createdAt", r) }, { $group: { _id: keyOf("$createdAt"), n: { $sum: 1 }, paid: { $sum: { $cond: [{ $in: ["$status", ["paid", "delivered"]] }, 1, 0] } } } }]).toArray(),
   ]);
-  for (const x of vis) if (idx.has(x._id)) out.visitors[idx.get(x._id)!] = x.n;
-  for (const x of vw) if (idx.has(x._id)) out.views[idx.get(x._id)!] = x.n;
+  for (const x of vis) if (idx.has(x._id)) out.visitors[idx.get(x._id)!] += x.n; // a visitor seen in two buckets counts in both
+  for (const x of vw) if (idx.has(x._id)) out.views[idx.get(x._id)!] += x.n;
   for (const x of [...copy, ...material]) {
     const i = idx.get(x._id);
     if (i === undefined) continue;
@@ -252,6 +331,31 @@ async function seriesFor(db: Db, period: Period, r: Range): Promise<Series> {
   return out;
 }
 
+export type MonthRow = { month: string; leads: number; checkouts: number; paid: number; revenue: number };
+
+/** Leads and sales, one row per calendar month, for ranges longer than a couple of months. */
+async function monthlyRows(db: Db, r: Range): Promise<MonthRow[]> {
+  const fmt = (f: string) => ({ $dateToString: { format: "%Y-%m", date: f, timezone: "Asia/Kolkata" } });
+  const [copy, material, orders] = await Promise.all([
+    db.collection("freedownloadleads").aggregate([{ $match: inRange("createdAt", r) }, { $group: { _id: fmt("$createdAt"), n: { $sum: 1 } } }]).toArray(),
+    db.collection("freematerialleads").aggregate([{ $match: inRange("createdAt", r) }, { $group: { _id: fmt("$createdAt"), n: { $sum: 1 } } }]).toArray(),
+    db.collection("orders").aggregate([{ $match: inRange("createdAt", r) }, { $group: { _id: fmt("$createdAt"), n: { $sum: 1 }, paid: { $sum: { $cond: [{ $in: ["$status", ["paid", "delivered"]] }, 1, 0] } }, revenue: { $sum: { $cond: [{ $in: ["$status", ["paid", "delivered"]] }, "$total", 0] } } } }]).toArray(),
+  ]);
+  const map = new Map<string, MonthRow>();
+  const row = (k: string) => {
+    if (!map.has(k)) map.set(k, { month: `${MONTHS[Number(k.slice(5)) - 1]} ${k.slice(0, 4)}`, leads: 0, checkouts: 0, paid: 0, revenue: 0 });
+    return map.get(k)!;
+  };
+  for (const x of [...copy, ...material]) row(x._id).leads += x.n;
+  for (const x of orders) {
+    const m = row(x._id);
+    m.checkouts += x.n;
+    m.paid += x.paid;
+    m.revenue += x.revenue;
+  }
+  return [...map.entries()].sort((a, b) => a[0].localeCompare(b[0])).map((e) => e[1]);
+}
+
 async function memberTrend(): Promise<{ now: number; change: number | null } | null> {
   const n = await channelMemberCount();
   if (n == null) return null;
@@ -261,24 +365,29 @@ async function memberTrend(): Promise<{ now: number; change: number | null } | n
   return { now: n, change: prev[0] ? n - (prev[0].n as number) : null };
 }
 
-async function botStats(r: Range, period: Period) {
+async function botStats(r: Range, withDigest: boolean) {
   const col = mongoose.connection.db!.collection("tg_posts");
   const [sent, failed, digest] = await Promise.all([
     col.countDocuments({ status: "sent", sentAt: { $gte: r.start, $lt: r.end } }),
     col.countDocuments({ status: "failed", at: { $gte: r.start, $lt: r.end } }),
-    period === "day" ? col.findOne({ _id: `ca-${ymdOf(r.start)}` as never }) : Promise.resolve(null),
+    withDigest ? col.findOne({ _id: `ca-${ymdOf(r.start)}` as never }) : Promise.resolve(null),
   ]);
   return { sent, failed, digest: digest ? `${digest.status}${digest.mode ? ` (${digest.mode})` : ""}` : null };
 }
 
 // ---------- the report ----------
 
+const zeroStats = (): Stats => ({ visitors: 0, india: 0, views: 0, quizPlays: 0, quizPlayers: 0, leads: 0, leadsFull: 0, copyLeads: 0, materialLeads: 0, ordersStarted: 0, paid: 0, revenue: 0, left: {}, payFailures: 0, reminders: 0, jsErrors: 0, checkoutFailed: 0 });
+
 export type ReportData = {
-  period: Period;
+  kind: Kind;
+  bucket: Bucket;
   title: string;
   range: Range;
-  previous: Range;
-  /** False while our tracker has no complete earlier period to compare with. */
+  previous: Range | null;
+  /** True when there is an earlier period to compare leads, sales and requests with. */
+  hasPrevious: boolean;
+  /** True when our tracker also covers the earlier period, so visitor comparisons are fair. */
   comparable: boolean;
   trackedFrom: Date | null;
   cur: Stats;
@@ -288,6 +397,7 @@ export type ReportData = {
   sources: Count[];
   leads: LeadBreakdown;
   leadsToDate: number;
+  months: MonthRow[];
   busiest: { day: string; n: number } | null;
   members: { now: number; change: number | null } | null;
   bot: { sent: number; failed: number; digest: string | null };
@@ -297,9 +407,10 @@ export type ReportData = {
 
 const REASON_TEXT: Record<string, string> = { expensive: "too expensive", failed: "payment did not work", unsure: "not sure yet" };
 
-function flagsFor(period: Period, c: Stats, p: Stats, comparable: boolean): string[] {
+function flagsFor(spec: Spec, c: Stats, p: Stats, comparable: boolean): string[] {
   const out: string[] = [];
-  if (comparable && p.views > 0 && c.views < p.views * 0.75) out.push(`Page views are down ${Math.round((1 - c.views / p.views) * 100)}% on the ${period} before.`);
+  const unit = spec.kind === "day" || spec.kind === "today" ? "day" : spec.kind === "week" ? "week" : "period";
+  if (spec.previous && comparable && p.views > 0 && c.views < p.views * 0.75) out.push(`Page views are down ${Math.round((1 - c.views / p.views) * 100)}% on the ${unit} before.`);
   if (c.leads >= 10 && (c.leads - c.leadsFull) / c.leads > 0.4) out.push(`${c.leads - c.leadsFull} of ${c.leads} new leads are email only, with no answers or WhatsApp number.`);
   if (c.ordersStarted > 0 && c.paid === 0) out.push(`${c.ordersStarted} checkout${c.ordersStarted === 1 ? "" : "s"} started and none paid.`);
   if (c.payFailures > 0) out.push(`${c.payFailures} payment${c.payFailures === 1 ? "" : "s"} failed in the payment window.`);
@@ -309,34 +420,33 @@ function flagsFor(period: Period, c: Stats, p: Stats, comparable: boolean): stri
   return out.slice(0, 4);
 }
 
-export async function collectReport(period: Period, now = new Date()): Promise<ReportData> {
+export async function collectReport(spec: Spec): Promise<ReportData> {
   const db = await siteDb();
-  const { current, previous } = rangesFor(period, now);
+  const { current, previous } = spec;
   const first = await db.collection("tracking").find({}, { projection: { ts: 1 } }).sort({ ts: 1 }).limit(1).toArray();
   const trackedFrom = (first[0]?.ts as Date | undefined) ?? null;
-  const comparable = !trackedFrom || trackedFrom <= previous.start;
-  const big = period === "month";
+  const comparable = !!previous && (!trackedFrom || trackedFrom <= previous.start);
 
-  const [cur, prev, series, pages, sources, leads, members, bot, leadsToDate] = await Promise.all([
+  const [cur, prev, series, pages, sources, leads, members, bot, leadsToDate, months] = await Promise.all([
     statsFor(db, current),
-    statsFor(db, previous),
-    seriesFor(db, period, current),
-    topPages(db, current, big ? 10 : 5),
-    topSources(db, current, big ? 7 : 4),
+    previous ? statsFor(db, previous) : Promise.resolve(zeroStats()),
+    seriesFor(db, spec.bucket, current),
+    topPages(db, current, 5),
+    topSources(db, current, 4),
     leadBreakdown(db, current),
     memberTrend(),
-    botStats(current, period),
+    botStats(current, spec.kind === "day"),
     Promise.all([db.collection("freedownloadleads").countDocuments({}), db.collection("freematerialleads").countDocuments({})]).then((x) => x[0] + x[1]),
+    (current.end.getTime() - current.start.getTime()) / DAY_MS > 62 ? monthlyRows(db, current) : Promise.resolve([] as MonthRow[]),
   ]);
   const best = series.visitors.reduce((bi, v, i, a) => (v > a[bi] ? i : bi), 0);
-  const busiest = period === "day" ? null : { day: series.labels[best], n: series.visitors[best] };
+  const busiest = spec.bucket === "hour" ? null : { day: series.labels[best], n: series.visitors[best] };
 
   return {
-    period,
-    title: period === "day" ? "Daily report" : period === "week" ? "Weekly report" : "Monthly report",
-    range: current, previous, comparable, trackedFrom,
-    cur, prev, series, pages, sources, leads, leadsToDate, busiest, members, bot,
-    flags: flagsFor(period, cur, prev, comparable),
+    kind: spec.kind, bucket: spec.bucket, title: spec.title,
+    range: current, previous, hasPrevious: !!previous, comparable, trackedFrom,
+    cur, prev, series, pages, sources, leads, leadsToDate, months, busiest, members, bot,
+    flags: flagsFor(spec, cur, prev, comparable),
     generatedAt: new Date(),
   };
 }
