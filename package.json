@@ -6,6 +6,7 @@
   "scripts": {
     "start": "tsx src/worker.ts",
     "dry-ca": "tsx src/dry-ca.ts",
+    "report": "tsx src/report-cli.ts",
     "check": "tsc --noEmit && tsx src/check-content.ts",
     "check:links": "tsx src/check-content.ts --links"
   },

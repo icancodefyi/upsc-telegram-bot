@@ -8,6 +8,8 @@ import { postQuiz } from "./quiz";
 import { postRecap } from "./recap";
 import { runSlots, emergencyMorning } from "./slots";
 import { claim, markFailed } from "./claim";
+import { buildReport, type Period } from "./site-report";
+import { sendToAdmin } from "./telegram";
 
 /**
  * Runs on the VPS. Every minute it posts whatever is due. Every job has a fallback, retries and a record in
@@ -26,6 +28,7 @@ const EMERGENCY_AT = "08:30";
 const QUIZ_TIMES = (process.env.QUIZ_TIMES ?? "10:00").split(",").map((t) => t.trim()).filter(Boolean);
 const RECAP_TIME = process.env.RECAP_TIME || "18:00";
 const REPORT_TIME = process.env.REPORT_TIME || "22:15";
+const SITE_REPORT_TIME = process.env.SITE_REPORT_TIME || "08:00"; // weekly on Sunday, monthly on the 1st
 
 const istParts = (d = new Date()) => {
   const f = new Intl.DateTimeFormat("en-CA", { timeZone: IST, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", weekday: "short", hourCycle: "h23" }).formatToParts(d);
@@ -150,6 +153,24 @@ async function tick() {
     const digest = await col.findOne({ _id: `ca-${date}` as never });
     await alertAdmin(`Daily report ${date}: ${sent} posts sent, ${failed} failed. Digest: ${digest?.status ?? "none"} (${digest?.mode ?? "n/a"}).`);
     await col.updateOne({ _id: `report-${date}` as never }, { $set: { status: "sent" } });
+  }
+
+  // 7. Reports on the whole website, to the owner: Sunday morning (last 7 days) and the 1st of the month (last month).
+  if (process.env.ADMIN_CHAT_ID && process.env.SITE_DB_NAME && hm >= SITE_REPORT_TIME && hm < addHours(SITE_REPORT_TIME, 2)) {
+    const due: { id: string; period: Period }[] = [];
+    if (p.dow === "Sun") due.push({ id: `site-weekly-${date}`, period: "week" });
+    if (date.endsWith("-01")) due.push({ id: `site-monthly-${date.slice(0, 7)}`, period: "month" });
+    for (const job of due) {
+      if (!(await claim(col, job.id, now))) continue;
+      try {
+        const messages = await buildReport(job.period, now);
+        for (const m of messages) await sendToAdmin(m);
+        await col.updateOne({ _id: job.id as never }, { $set: { status: "sent", sentAt: new Date(), parts: messages.length } });
+        log("sent", job.id, messages.length, "message(s)");
+      } catch (e) {
+        await markFailed(col, job.id, e, log);
+      }
+    }
   }
 
   await db.collection("health").updateOne({ _id: "heartbeat" as never }, { $set: { at: now, hm } }, { upsert: true });

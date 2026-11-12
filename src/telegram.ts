@@ -92,6 +92,38 @@ export async function sendQuizPoll(question: string, options: string[], correct:
   return (await call<{ message_id: number }>("sendPoll", { chat_id: CHANNEL(), question, options, type: "quiz", correct_option_id: correct, is_anonymous: true, ...(explanation ? { explanation } : {}) })).message_id;
 }
 
+/** Number of people in the channel, or null if it cannot be read. */
+export async function channelMemberCount(): Promise<number | null> {
+  if (dry()) return null;
+  try {
+    return await call<number>("getChatMemberCount", { chat_id: CHANNEL() }, 2);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * A private HTML message to the owner (reports). Unlike alertAdmin this throws on failure, so the
+ * caller can retry. If Telegram rejects the markup it is sent again as plain text.
+ */
+export async function sendToAdmin(html: string): Promise<void> {
+  const chat = process.env.ADMIN_CHAT_ID;
+  if (!chat) throw new Error("ADMIN_CHAT_ID is not set");
+  if (dry()) {
+    console.log("[DRY_RUN] would send to admin:\n" + html + "\n");
+    return;
+  }
+  try {
+    await call("sendMessage", { chat_id: chat, text: html, parse_mode: "HTML", disable_web_page_preview: true });
+  } catch (e) {
+    if (e instanceof TgError && e.code === 400) {
+      await call("sendMessage", { chat_id: chat, text: toPlain(html), disable_web_page_preview: true });
+      return;
+    }
+    throw e;
+  }
+}
+
 /** A private message to the owner when something needs attention. Never throws. Needs ADMIN_CHAT_ID. */
 export async function alertAdmin(text: string): Promise<void> {
   console.error("ALERT:", text);
