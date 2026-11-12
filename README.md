@@ -109,3 +109,10 @@ Ask for one any time on Telegram (only your own chat is answered):
 
 Build one by hand: `npm run report -- day|week|month` writes a PDF to `reports/`; add `--send` to also deliver it.
 The PDFs are drawn with a headless Chromium. On a new server run `npx playwright install --with-deps chromium` once, and set `PLAYWRIGHT_BROWSERS_PATH` to a folder the bot user can read.
+
+### Where the numbers come from
+
+- **Visitors, page views, sources, quiz plays, errors:** PostHog (`POSTHOG_PERSONAL_API_KEY`, and `POSTHOG_PROJECT_ID` if it is not 480014). Only the site's own hostnames count (no localhost or previews), and PostHog's own bot detection removes bots and crawlers. If PostHog cannot be reached, the report falls back to the site's own tracker and says so.
+- **Leads, requests, orders, reminder emails:** the site's database. Leads are different people (emails), not request records.
+- **Google search:** Search Console. One-time setup on your own computer: run `DOTENV_CONFIG_PATH=../upscprepnotes.in/.env.local npm run google-auth`, sign in with the Google account that owns the property, then put `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REFRESH_TOKEN` (from `.gsc-token`) and `GSC_SITE` (for example `sc-domain:upscprepnotes.in`) in the bot's `.env`. The Google client must list `http://localhost:53682/callback` as a redirect URI, and the Search Console API must be enabled in its Cloud project. Until then the report shows "Google search: not connected yet".
+- **Known gaps** are listed in `DATA_GAPS` in `src/site-report.ts`, and reports that overlap them say so.

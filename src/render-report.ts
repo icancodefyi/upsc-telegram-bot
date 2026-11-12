@@ -151,6 +151,43 @@ function weekRows(d: ReportData): string[][] {
   return rows;
 }
 
+/** Sums a daily series into weeks when it is too long to draw one bar per day. */
+function compact(series: { date: string; clicks: number }[]): { values: number[]; labels: string[] } {
+  const label = (iso: string) => `${Number(iso.slice(8))} ${["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][Number(iso.slice(5, 7)) - 1]}`;
+  if (series.length <= 45) return { values: series.map((x) => x.clicks), labels: series.map((x) => label(x.date)) };
+  const values: number[] = [];
+  const labels: string[] = [];
+  for (let i = 0; i < series.length; i += 7) {
+    values.push(series.slice(i, i + 7).reduce((a, x) => a + x.clicks, 0));
+    labels.push(label(series[i].date));
+  }
+  return { values, labels };
+}
+
+function searchPage(d: ReportData, head: (n: string) => string, dDB: (a: number, b: number) => string): string {
+  if (d.search.state !== "ok") return "";
+  const { data, prev } = d.search;
+  const dS = (a: number, b?: number) => (prev && b !== undefined && d.hasPrevious ? delta(a, b) : "");
+  const { values, labels } = compact(data.series);
+  const asRows = (rows: { label: string; clicks: number; impressions: number }[]): Count[] => rows.map((r) => ({ label: r.label, n: r.clicks }));
+  void dDB;
+  return `
+  ${head("Google search")}
+  <div class="tiles" style="grid-template-columns:repeat(4,1fr)">
+    ${tile("Clicks from Google", num(data.clicks), dS(data.clicks, prev?.clicks))}
+    ${tile("Impressions", num(data.impressions), dS(data.impressions, prev?.impressions), "times shown in search")}
+    ${tile("Click rate", `${(data.ctr * 100).toFixed(1)}%`, "", "clicks per impression")}
+    ${tile("Average position", data.position ? data.position.toFixed(1) : "-", "", "lower is better")}
+  </div>
+  ${card("Clicks from Google over time", bars(values, labels, { height: 140 }))}
+  <div class="grid2" style="margin-bottom:14px">
+    ${card("What people searched for", hbars(asRows(data.queries), { width: 30, empty: "No searches yet." }), "Clicks per search")}
+    ${card("Pages people landed on", hbars(asRows(data.pages), { width: 30, empty: "No pages yet." }), "Clicks from Google")}
+  </div>
+  <p class="note">Google's numbers run about 2 days behind and count days in US Pacific time. Included through ${esc(data.through)}.</p>
+  <div class="pb"></div>`;
+}
+
 export function renderHtml(d: ReportData): string {
   const { cur: c, prev: p, comparable } = d;
   const dDB = (a: number, b: number) => (d.hasPrevious ? delta(a, b) : "");
@@ -164,11 +201,12 @@ export function renderHtml(d: ReportData): string {
 
   // Our tracker has a start date: say so when it matters, instead of showing misleading zeros or jumps.
   const trackedLate = !!d.trackedFrom && d.trackedFrom > d.range.start;
+  const source = d.via === "posthog" ? "Visitors are from PostHog, with bots and test traffic left out." : "PostHog could not be reached, so visitors are from our own tracker (bots not removed).";
   const note = trackedLate
-    ? `Visitor and page numbers count from ${dayLabel(d.trackedFrom!)}, when tracking began. Leads, sales and requests cover the whole period.`
+    ? `${source} Visitor and page numbers count from ${dayLabel(d.trackedFrom!)}, when tracking began. Leads, sales and requests cover the whole period.`
     : d.hasPrevious && !comparable
-      ? `Visitor comparisons start once a full earlier ${periodWord} has been tracked (tracking began ${dayLabel(d.trackedFrom!)}).`
-      : "";
+      ? `${source} ${d.gaps.length ? "Visitor comparisons are hidden because of a gap in the data (see the note below)." : `Visitor comparisons start once a full earlier ${periodWord} has been tracked (tracking began ${dayLabel(d.trackedFrom!)}).`}`
+      : source;
   const answered = c.leadsFull;
   const leftTotal = Object.values(c.left).reduce((a, b) => a + b, 0);
   const reasonText: Record<string, string> = { expensive: "It felt too expensive", failed: "The payment did not work", unsure: "I am not sure yet" };
@@ -202,6 +240,7 @@ export function renderHtml(d: ReportData): string {
     ${tile("People who asked", num(c.leads), dDB(c.leads, p.leads), `${num(c.requests)} requests in all`)}
     ${tile("Revenue", rupees(c.revenue), dDB(c.revenue, p.revenue), `${num(c.paid)} paid · ${num(c.ordersStarted)} started`)}
   </div>
+  ${d.gaps.length ? `<p class="note" style="margin:0 0 10px">${d.gaps.map(esc).join(" ")}</p>` : ""}
   <section class="watch"><h3>Worth a look</h3>${d.flags.length ? `<ul>${d.flags.map((f) => `<li>${esc(f)}</li>`).join("")}</ul>` : `<p style="margin-top:6px;font-size:12px">Nothing unusual this ${periodWord}.</p>`}</section>
   ${card(unit, bars(visValues, visLabels, { height: 122, every: hourly ? 3 : undefined }), d.busiest ? `Busiest${d.bucket === "week" ? " week, from" : ":"} ${d.busiest.day}, ${num(d.busiest.n)} visitors` : "")}
   `;
@@ -240,6 +279,12 @@ export function renderHtml(d: ReportData): string {
   ${d.kind === "month" || d.kind === "all" ? `<p class="note" style="margin-top:10px">Different people who have asked for anything, to date: ${num(d.leadsToDate)}</p>` : ""}
   `;
 
+  const searchNote =
+    d.search.state === "off"
+      ? card("Google search", `<p class="empty">Not connected yet. Once Search Console is connected, clicks, impressions and the searches that bring people in will appear here.</p>`)
+      : d.search.state === "error"
+        ? card("Google search", `<p class="empty">The Google search numbers could not be read this time: ${esc(d.search.message)}</p>`)
+        : "";
   // ---- page 4: sales and everything else
   const p4 = `
   ${big ? head("Sales and the rest") : ""}
@@ -265,9 +310,9 @@ export function renderHtml(d: ReportData): string {
       ${d.bot.digest ? `<div><span>Current affairs digest</span><span>${esc(d.bot.digest)}</span></div>` : ""}
     </div>`)}
   </div>
-  ${card("Site health", `<div class="kv"><div><span>JavaScript errors recorded</span><span>${num(c.jsErrors)}</span></div><div><span>Checkout errors recorded</span><span>${num(c.checkoutFailed)}</span></div></div>`)}
+  <div class="${searchNote ? "grid2" : ""}">${card("Site health", `<div class="kv"><div><span>JavaScript errors recorded</span><span>${num(c.jsErrors)}</span></div><div><span>Checkout errors recorded</span><span>${num(c.checkoutFailed)}</span></div>${d.via === "posthog" ? `<div><span>Bot page views left out of the numbers</span><span>${num(c.botViews)}</span></div>` : ""}</div>`)}${searchNote}</div>
   `;
 
-  const pages = `${p1}${p2}<div class="pb"></div>${p3}<div class="pb"></div>${p4}`;
+  const pages = `${p1}${p2}<div class="pb"></div>${p3}<div class="pb"></div>${searchPage(d, head, dDB)}${p4}`;
   return `<!doctype html><html><head><meta charset="utf-8"><title>${esc(d.title)} ${esc(d.range.label)}</title><style>${CSS}</style></head><body>${pages}</body></html>`;
 }

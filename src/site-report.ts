@@ -1,6 +1,8 @@
 import mongoose from "mongoose";
 import type { Db, Document } from "mongodb";
 import { channelMemberCount } from "./telegram";
+import { phEnabled, phQuery, hogTs, SITE_EVENT, PUBLIC_PAGE } from "./posthog";
+import { gscEnabled, fetchSearch, searchTotals, type SearchData, type SearchTotals } from "./search-console";
 
 /**
  * Collects the numbers for the reports from the site's own database (its tracker, leads, orders and
@@ -143,6 +145,8 @@ export type Stats = {
   views: number;
   quizPlays: number;
   quizPlayers: number;
+  /** Page views PostHog identified as bots or crawlers and left out. */
+  botViews: number;
   /** Different people (emails) who asked for something in the period. */
   leads: number;
   /** How many of them answered every question. */
@@ -176,7 +180,23 @@ async function uniq(db: Db, match: Document): Promise<number> {
   return (r[0]?.n as number) ?? 0;
 }
 
-export async function statsFor(db: Db, r: Range): Promise<Stats> {
+type Traffic = { visitors: number; india: number; views: number; quizPlays: number; quizPlayers: number; jsErrors: number; checkoutFailed: number; botViews: number };
+type Via = "posthog" | "tracker";
+const win = (r: Range) => `timestamp >= ${hogTs(r.start)} AND timestamp < ${hogTs(r.end)}`;
+const num0 = (v: unknown) => Number(v ?? 0) || 0;
+
+async function trafficPosthog(r: Range): Promise<Traffic> {
+  const w = win(r);
+  const [a, q, e, bots] = await Promise.all([
+    phQuery(`SELECT countDistinct(person_id), countDistinctIf(person_id, properties.$geoip_country_code = 'IN'), count() FROM events WHERE event = '$pageview' AND ${w} AND ${SITE_EVENT} AND ${PUBLIC_PAGE}`),
+    phQuery(`SELECT count(), countDistinct(person_id) FROM events WHERE event = 'quiz_complete' AND ${w} AND ${SITE_EVENT}`),
+    phQuery(`SELECT countIf(event = '$exception'), countIf(event = 'checkout_failed') FROM events WHERE event IN ('$exception', 'checkout_failed') AND ${w} AND ${SITE_EVENT}`),
+    phQuery(`SELECT count() FROM events WHERE event = '$pageview' AND ${w} AND properties.$host IN ('upscprepnotes.in', 'www.upscprepnotes.in') AND properties.$virt_is_bot = true`),
+  ]);
+  return { visitors: num0(a[0]?.[0]), india: num0(a[0]?.[1]), views: num0(a[0]?.[2]), quizPlays: num0(q[0]?.[0]), quizPlayers: num0(q[0]?.[1]), jsErrors: num0(e[0]?.[0]), checkoutFailed: num0(e[0]?.[1]), botViews: num0(bots[0]?.[0]) };
+}
+
+async function trafficTracker(db: Db, r: Range): Promise<Traffic> {
   const t = db.collection("tracking");
   const view = { event: "page_view", path: PAGE_EXCLUDE, ...inRange("ts", r) };
   const [visitors, india, views, quizPlays, quizPlayers, jsErrors, checkoutFailed] = await Promise.all([
@@ -188,6 +208,12 @@ export async function statsFor(db: Db, r: Range): Promise<Stats> {
     t.countDocuments({ event: "js_error", ...inRange("ts", r) }),
     t.countDocuments({ event: "checkout_failed", ...inRange("ts", r) }),
   ]);
+  return { visitors, india, views, quizPlays, quizPlayers, jsErrors, checkoutFailed, botViews: 0 };
+}
+
+export async function statsFor(db: Db, r: Range, via: Via = "tracker"): Promise<Stats> {
+  const traffic = via === "posthog" ? await trafficPosthog(r) : await trafficTracker(db, r);
+  const { visitors, india, views, quizPlays, quizPlayers, jsErrors, checkoutFailed, botViews } = traffic;
 
   // People, not requests: one person asking for three copies is one lead.
   const peopleIn = async (coll: string, range: Range) =>
@@ -221,7 +247,7 @@ export async function statsFor(db: Db, r: Range): Promise<Stats> {
   ]);
 
   return {
-    visitors, india, views, quizPlays, quizPlayers,
+    visitors, india, views, quizPlays, quizPlayers, botViews,
     leads: everyone.size,
     leadsFull: [...everyone.values()].filter(Boolean).length,
     copyLeads: copyPeople.length,
@@ -242,7 +268,7 @@ export async function statsFor(db: Db, r: Range): Promise<Stats> {
 export async function quickStatus(now = new Date()): Promise<{ label: string; s: Stats }> {
   const db = await siteDb();
   const start = istMidnight(ymdOf(now));
-  return { label: `${dayLong(start)}, until ${ist(now).toISOString().slice(11, 16)}`, s: await statsFor(db, { start, end: now, label: "" }) };
+  return { label: `${dayLong(start)}, until ${ist(now).toISOString().slice(11, 16)}`, s: await statsFor(db, { start, end: now, label: "" }, phEnabled() ? "posthog" : "tracker") };
 }
 
 const cleanPath = (p: string) => p.replace(/\/$/, "") || "/";
@@ -254,7 +280,7 @@ const hostOf = (ref: string): string => {
   }
 };
 
-async function topPages(db: Db, r: Range, limit: number): Promise<Count[]> {
+async function topPagesTracker(db: Db, r: Range, limit: number): Promise<Count[]> {
   const rows = await db.collection("tracking").aggregate([
     { $match: { event: "page_view", path: PAGE_EXCLUDE, ...inRange("ts", r) } },
     { $addFields: { p: { $arrayElemAt: [{ $split: ["$path", "?"] }, 0] } } },
@@ -265,7 +291,7 @@ async function topPages(db: Db, r: Range, limit: number): Promise<Count[]> {
   return rows.map((x) => ({ label: cleanPath(String(x._id)), n: x.n as number }));
 }
 
-async function topSources(db: Db, r: Range, limit: number): Promise<Count[]> {
+async function topSourcesTracker(db: Db, r: Range, limit: number): Promise<Count[]> {
   const rows = await db.collection("tracking").find({ event: "session_start", ...inRange("ts", r) }, { projection: { referrer: 1, utm: 1 } }).limit(50000).toArray();
   const count: Record<string, number> = {};
   for (const x of rows) {
@@ -274,6 +300,30 @@ async function topSources(db: Db, r: Range, limit: number): Promise<Count[]> {
     if (src && OWN_HOSTS.test(src)) continue;
     if (!src) src = "direct";
     count[src] = (count[src] || 0) + 1;
+  }
+  return Object.entries(count).sort((a, b) => b[1] - a[1]).slice(0, limit).map(([label, n]) => ({ label, n }));
+}
+
+async function topPages(db: Db, r: Range, limit: number, via: Via): Promise<Count[]> {
+  if (via === "tracker") return topPagesTracker(db, r, limit);
+  const rows = await phQuery(`SELECT properties.$pathname AS p, countDistinct(person_id) AS n FROM events WHERE event = '$pageview' AND ${win(r)} AND ${SITE_EVENT} AND ${PUBLIC_PAGE} GROUP BY p ORDER BY n DESC LIMIT ${limit}`);
+  return rows.map((x) => ({ label: cleanPath(String(x[0] ?? "/")), n: num0(x[1]) }));
+}
+
+/** Where sessions began: the campaign tag if there is one, otherwise the site that sent the visitor. */
+async function topSources(db: Db, r: Range, limit: number, via: Via): Promise<Count[]> {
+  if (via === "tracker") return topSourcesTracker(db, r, limit);
+  const rows = await phQuery(
+    `SELECT u, ref, count() AS n FROM (SELECT properties.$session_id AS sid, argMin(properties.utm_source, timestamp) AS u, argMin(properties.$referring_domain, timestamp) AS ref FROM events WHERE event = '$pageview' AND ${win(r)} AND ${SITE_EVENT} AND ${PUBLIC_PAGE} GROUP BY sid) GROUP BY u, ref ORDER BY n DESC LIMIT 200`,
+  );
+  const count: Record<string, number> = {};
+  for (const x of rows) {
+    const utm = String(x[0] ?? "").toLowerCase();
+    const ref = String(x[1] ?? "").replace(/^www\./, "").toLowerCase();
+    let src = utm || (ref && ref !== "$direct" ? ref : "");
+    if (src && OWN_HOSTS.test(src)) continue;
+    if (!src) src = "direct";
+    count[src] = (count[src] || 0) + num0(x[2]);
   }
   return Object.entries(count).sort((a, b) => b[1] - a[1]).slice(0, limit).map(([label, n]) => ({ label, n }));
 }
@@ -309,7 +359,7 @@ async function leadBreakdown(db: Db, r: Range): Promise<LeadBreakdown> {
 export type Series = { labels: string[]; visitors: number[]; views: number[]; leadsFull: number[]; leadsEmail: number[]; orders: number[]; paid: number[] };
 
 /** Per-hour, per-day or per-week numbers for the charts. */
-async function seriesFor(db: Db, bucket: Bucket, r: Range): Promise<Series> {
+async function seriesFor(db: Db, bucket: Bucket, r: Range, via: Via): Promise<Series> {
   const keys: string[] = [];
   const labels: string[] = [];
   let keyOf: (f: string) => Document;
@@ -339,9 +389,24 @@ async function seriesFor(db: Db, bucket: Bucket, r: Range): Promise<Series> {
   const out: Series = { labels, visitors: zero(), views: zero(), leadsFull: zero(), leadsEmail: zero(), orders: zero(), paid: zero() };
 
   const trackView = { event: "page_view", path: PAGE_EXCLUDE, ...inRange("ts", r) };
-  const [vis, vw, copy, material, orders] = await Promise.all([
-    db.collection("tracking").aggregate([{ $match: trackView }, { $group: { _id: { b: keyOf("$ts"), v: "$visitorId" } } }, { $group: { _id: "$_id.b", n: { $sum: 1 } } }]).toArray(),
-    db.collection("tracking").aggregate([{ $match: trackView }, { $group: { _id: keyOf("$ts"), n: { $sum: 1 } } }]).toArray(),
+  // Visitors and views per bucket: PostHog (real visits only) or, as a fallback, our own tracker.
+  const traffic = async (): Promise<{ vis: Document[]; vw: Document[] }> => {
+    if (via === "tracker") {
+      const [vis, vw] = await Promise.all([
+        db.collection("tracking").aggregate([{ $match: trackView }, { $group: { _id: { b: keyOf("$ts"), v: "$visitorId" } } }, { $group: { _id: "$_id.b", n: { $sum: 1 } } }]).toArray(),
+        db.collection("tracking").aggregate([{ $match: trackView }, { $group: { _id: keyOf("$ts"), n: { $sum: 1 } } }]).toArray(),
+      ]);
+      return { vis, vw };
+    }
+    const expr =
+      bucket === "hour" ? `formatDateTime(toTimeZone(timestamp, 'Asia/Kolkata'), '%H')`
+      : bucket === "day" ? `formatDateTime(toTimeZone(timestamp, 'Asia/Kolkata'), '%Y-%m-%d')`
+      : `toString(intDiv(dateDiff('second', ${hogTs(r.start)}, timestamp), 604800))`;
+    const rows = await phQuery(`SELECT ${expr} AS b, countDistinct(person_id), count() FROM events WHERE event = '$pageview' AND ${win(r)} AND ${SITE_EVENT} AND ${PUBLIC_PAGE} GROUP BY b LIMIT 1000`);
+    return { vis: rows.map((x) => ({ _id: String(x[0]), n: num0(x[1]) })), vw: rows.map((x) => ({ _id: String(x[0]), n: num0(x[2]) })) };
+  };
+  const [{ vis, vw }, copy, material, orders] = await Promise.all([
+    traffic(),
     db.collection("freedownloadleads").aggregate([{ $match: inRange("createdAt", r) }, { $group: { _id: keyOf("$createdAt"), n: { $sum: 1 }, full: { $sum: { $cond: [{ $ifNull: ["$profile.stage", false] }, 1, 0] } } } }]).toArray(),
     db.collection("freematerialleads").aggregate([{ $match: inRange("createdAt", r) }, { $group: { _id: keyOf("$createdAt"), n: { $sum: 1 }, full: { $sum: { $cond: [{ $ifNull: ["$profile.stage", false] }, 1, 0] } } } }]).toArray(),
     db.collection("orders").aggregate([{ $match: inRange("createdAt", r) }, { $group: { _id: keyOf("$createdAt"), n: { $sum: 1 }, paid: { $sum: { $cond: [{ $in: ["$status", ["paid", "delivered"]] }, 1, 0] } } } }]).toArray(),
@@ -418,7 +483,7 @@ async function botStats(r: Range, withDigest: boolean) {
 
 // ---------- the report ----------
 
-const zeroStats = (): Stats => ({ visitors: 0, india: 0, views: 0, quizPlays: 0, quizPlayers: 0, leads: 0, leadsFull: 0, copyLeads: 0, materialLeads: 0, requests: 0, formLeads: 0, formFull: 0, ordersStarted: 0, paid: 0, revenue: 0, left: {}, payFailures: 0, reminders: 0, jsErrors: 0, checkoutFailed: 0 });
+const zeroStats = (): Stats => ({ visitors: 0, india: 0, views: 0, quizPlays: 0, quizPlayers: 0, botViews: 0, leads: 0, leadsFull: 0, copyLeads: 0, materialLeads: 0, requests: 0, formLeads: 0, formFull: 0, ordersStarted: 0, paid: 0, revenue: 0, left: {}, payFailures: 0, reminders: 0, jsErrors: 0, checkoutFailed: 0 });
 
 export type ReportData = {
   kind: Kind;
@@ -426,6 +491,11 @@ export type ReportData = {
   title: string;
   range: Range;
   previous: Range | null;
+  /** Where the visitor numbers come from. PostHog excludes bots and test traffic; the tracker is only a fallback. */
+  via: Via;
+  /** Known stretches when visitor data is missing, that overlap this report. */
+  gaps: string[];
+  search: { state: "off" } | { state: "error"; message: string } | { state: "ok"; data: SearchData; prev: SearchTotals | null };
   /** True when there is an earlier period to compare leads, sales and requests with. */
   hasPrevious: boolean;
   /** True when our tracker also covers the earlier period, so visitor comparisons are fair. */
@@ -461,31 +531,89 @@ function flagsFor(spec: Spec, c: Stats, p: Stats, comparable: boolean): string[]
   return out.slice(0, 4);
 }
 
-export async function collectReport(spec: Spec): Promise<ReportData> {
+/** Stretches when PostHog recorded little or nothing, so reports can say why a number looks low. */
+const DATA_GAPS = [
+  { from: new Date("2026-11-03T00:00:00+05:30"), to: new Date("2026-11-06T00:00:00+05:30"), note: "PostHog recorded almost no visits from 3 to 5 Nov, when analytics was switched off for a few days. Visitor numbers for those days are too low." },
+];
+const overlaps = (r: Range, g: { from: Date; to: Date }) => r.start < g.to && r.end > g.from;
+
+async function firstSeen(db: Db, via: Via): Promise<Date | null> {
+  if (via === "posthog") {
+    const rows = await phQuery(`SELECT toString(min(timestamp)) FROM events WHERE event = '$pageview' AND properties.$host IN ('upscprepnotes.in', 'www.upscprepnotes.in')`);
+    const d = rows[0]?.[0] ? new Date(String(rows[0][0])) : null;
+    return d && !Number.isNaN(d.getTime()) ? d : null;
+  }
+  const first = await db.collection("tracking").find({}, { projection: { ts: 1 } }).sort({ ts: 1 }).limit(1).toArray();
+  return (first[0]?.ts as Date | undefined) ?? null;
+}
+
+/** Google search numbers for the range. Search Console runs about 2 days behind, so the end is pulled back. */
+async function searchFor(spec: Spec, now: Date): Promise<ReportData["search"]> {
+  if (!gscEnabled()) return { state: "off" };
+  try {
+    const latest = ymdOf(new Date(now.getTime() - 2 * DAY_MS));
+    const earliest = ymdOf(new Date(now.getTime() - 480 * DAY_MS)); // Search Console keeps about 16 months
+    const endFull = ymdOf(new Date(spec.current.end.getTime() - 1));
+    const end = endFull < latest ? endFull : latest;
+    const startFull = ymdOf(spec.current.start);
+    const start = startFull > earliest ? startFull : earliest;
+    if (start > end) return { state: "off" };
+    const data = await fetchSearch(start, end);
+    let prev: SearchTotals | null = null;
+    if (spec.previous) {
+      const pEnd = ymdOf(new Date(spec.previous.end.getTime() - 1));
+      const pStart = ymdOf(spec.previous.start);
+      if (pStart >= earliest && pEnd <= latest) prev = await searchTotals(pStart, pEnd);
+    }
+    return { state: "ok", data, prev };
+  } catch (e) {
+    return { state: "error", message: (e instanceof Error ? e.message : String(e)).slice(0, 200) };
+  }
+}
+
+export async function collectReport(spec: Spec, now = new Date()): Promise<ReportData> {
   const db = await siteDb();
   const { current, previous } = spec;
-  const first = await db.collection("tracking").find({}, { projection: { ts: 1 } }).sort({ ts: 1 }).limit(1).toArray();
-  const trackedFrom = (first[0]?.ts as Date | undefined) ?? null;
-  const comparable = !!previous && (!trackedFrom || trackedFrom <= previous.start);
+  const gather = (via: Via) =>
+    Promise.all([
+      statsFor(db, current, via),
+      previous ? statsFor(db, previous, via) : Promise.resolve(zeroStats()),
+      seriesFor(db, spec.bucket, current, via),
+      topPages(db, current, 5, via),
+      topSources(db, current, 4, via),
+      firstSeen(db, via),
+    ]);
 
-  const [cur, prev, series, pages, sources, leads, members, bot, leadsToDate, months] = await Promise.all([
-    statsFor(db, current),
-    previous ? statsFor(db, previous) : Promise.resolve(zeroStats()),
-    seriesFor(db, spec.bucket, current),
-    topPages(db, current, 5),
-    topSources(db, current, 4),
+  // PostHog is the source for visitors (bots and test traffic excluded). If it cannot be reached, fall back to our own tracker and say so.
+  let via: Via = phEnabled() ? "posthog" : "tracker";
+  let traffic;
+  try {
+    traffic = await gather(via);
+  } catch (e) {
+    if (via === "tracker") throw e;
+    console.error("PostHog failed, using our own tracker instead:", String(e).slice(0, 200));
+    via = "tracker";
+    traffic = await gather(via);
+  }
+  const [cur, prev, series, pages, sources, trackedFrom] = traffic;
+
+  const [leads, members, bot, leadsToDate, months, search] = await Promise.all([
     leadBreakdown(db, current),
     memberTrend(),
     botStats(current, spec.kind === "day"),
     Promise.all([db.collection("freedownloadleads").distinct("email"), db.collection("freematerialleads").distinct("email")]).then((x) => new Set([...x[0], ...x[1]].map((e) => String(e).toLowerCase())).size),
     (current.end.getTime() - current.start.getTime()) / DAY_MS > 62 ? monthlyRows(db, current) : Promise.resolve([] as MonthRow[]),
+    searchFor(spec, now),
   ]);
+
+  const gaps = via === "posthog" ? DATA_GAPS.filter((g) => overlaps(current, g) || (previous && overlaps(previous, g))).map((g) => g.note) : [];
+  const comparable = !!previous && (!trackedFrom || trackedFrom <= previous.start) && gaps.length === 0;
   const best = series.visitors.reduce((bi, v, i, a) => (v > a[bi] ? i : bi), 0);
   const busiest = spec.bucket === "hour" ? null : { day: series.labels[best], n: series.visitors[best] };
 
   return {
     kind: spec.kind, bucket: spec.bucket, title: spec.title,
-    range: current, previous, hasPrevious: !!previous, comparable, trackedFrom,
+    range: current, previous, via, gaps, search, hasPrevious: !!previous, comparable, trackedFrom,
     cur, prev, series, pages, sources, leads, leadsToDate, months, busiest, members, bot,
     flags: flagsFor(spec, cur, prev, comparable),
     generatedAt: new Date(),
