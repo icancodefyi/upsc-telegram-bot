@@ -143,10 +143,18 @@ export type Stats = {
   views: number;
   quizPlays: number;
   quizPlayers: number;
+  /** Different people (emails) who asked for something in the period. */
   leads: number;
+  /** How many of them answered every question. */
   leadsFull: number;
+  /** Different people who asked for an answer copy, and for a free material. */
   copyLeads: number;
   materialLeads: number;
+  /** Every request record, so one person asking for three things counts three times. */
+  requests: number;
+  /** People who asked after the new question form went live, and how many of those answered. */
+  formLeads: number;
+  formFull: number;
   ordersStarted: number;
   paid: number;
   revenue: number;
@@ -156,6 +164,9 @@ export type Stats = {
   jsErrors: number;
   checkoutFailed: number;
 };
+
+/** When the form with the preparation questions went live (11 Nov 2026, 9:49pm IST). Before this, nobody was asked. */
+export const FORM_LIVE = new Date("2026-11-11T16:19:00Z");
 
 const inRange = (field: string, r: Range) => ({ [field]: { $gte: r.start, $lt: r.end } });
 const PAGE_EXCLUDE = { $not: { $regex: "^/(admin|api|get/|download/|unsubscribe|ask)" } };
@@ -178,14 +189,27 @@ export async function statsFor(db: Db, r: Range): Promise<Stats> {
     t.countDocuments({ event: "checkout_failed", ...inRange("ts", r) }),
   ]);
 
-  const leadAgg = async (coll: string) => {
-    const x = await db.collection(coll).aggregate([
-      { $match: inRange("createdAt", r) },
-      { $group: { _id: null, n: { $sum: 1 }, full: { $sum: { $cond: [{ $ifNull: ["$profile.stage", false] }, 1, 0] } } } },
+  // People, not requests: one person asking for three copies is one lead.
+  const peopleIn = async (coll: string, range: Range) =>
+    db.collection(coll).aggregate([
+      { $match: inRange("createdAt", range) },
+      { $group: { _id: { $toLower: "$email" }, requests: { $sum: 1 }, full: { $max: { $cond: [{ $ifNull: ["$profile.stage", false] }, 1, 0] } } } },
     ]).toArray();
-    return { n: (x[0]?.n as number) ?? 0, full: (x[0]?.full as number) ?? 0 };
+  const formRange: Range = { start: new Date(Math.max(r.start.getTime(), FORM_LIVE.getTime())), end: r.end, label: "" };
+  const [copyPeople, materialPeople, formCopy, formMaterial] = await Promise.all([
+    peopleIn("freedownloadleads", r),
+    peopleIn("freematerialleads", r),
+    formRange.start < r.end ? peopleIn("freedownloadleads", formRange) : Promise.resolve([]),
+    formRange.start < r.end ? peopleIn("freematerialleads", formRange) : Promise.resolve([]),
+  ]);
+  const merge = (...lists: Document[][]) => {
+    const m = new Map<string, number>();
+    for (const l of lists) for (const x of l) m.set(String(x._id), Math.max(m.get(String(x._id)) ?? 0, x.full as number));
+    return m;
   };
-  const [copy, material] = await Promise.all([leadAgg("freedownloadleads"), leadAgg("freematerialleads")]);
+  const everyone = merge(copyPeople, materialPeople);
+  const afterForm = merge(formCopy, formMaterial);
+  const sumRequests = (l: Document[]) => l.reduce((a, x) => a + (x.requests as number), 0);
 
   const orders = db.collection("orders");
   const [started, paidAgg, leftAgg, failAgg, reminders] = await Promise.all([
@@ -198,10 +222,13 @@ export async function statsFor(db: Db, r: Range): Promise<Stats> {
 
   return {
     visitors, india, views, quizPlays, quizPlayers,
-    leads: copy.n + material.n,
-    leadsFull: copy.full + material.full,
-    copyLeads: copy.n,
-    materialLeads: material.n,
+    leads: everyone.size,
+    leadsFull: [...everyone.values()].filter(Boolean).length,
+    copyLeads: copyPeople.length,
+    materialLeads: materialPeople.length,
+    requests: sumRequests(copyPeople) + sumRequests(materialPeople),
+    formLeads: afterForm.size,
+    formFull: [...afterForm.values()].filter(Boolean).length,
     ordersStarted: started,
     paid: (paidAgg[0]?.n as number) ?? 0,
     revenue: (paidAgg[0]?.sum as number) ?? 0,
@@ -264,7 +291,12 @@ async function leadBreakdown(db: Db, r: Range): Promise<LeadBreakdown> {
     return Object.entries(out).sort((a, b) => b[1] - a[1]).slice(0, limit).map(([label, n]) => ({ label, n }));
   };
   const top = async (coll: string, field: string): Promise<Count[]> => {
-    const rows = await db.collection(coll).aggregate([{ $match: { ...inRange("createdAt", r), [field]: { $type: "string" } } }, { $group: { _id: `$${field}`, n: { $sum: 1 } } }, { $sort: { n: -1 } }, { $limit: 5 }]).toArray();
+    const rows = await db.collection(coll).aggregate([
+      { $match: { ...inRange("createdAt", r), [field]: { $type: "string" } } },
+      { $group: { _id: { f: `$${field}`, e: { $toLower: "$email" } } } }, // one person counts once per item
+      { $group: { _id: "$_id.f", n: { $sum: 1 } } },
+      { $sort: { n: -1 } }, { $limit: 5 },
+    ]).toArray();
     return rows.map((x) => ({ label: String(x._id), n: x.n as number }));
   };
   const [stage, attempt, mode, optional, region, topCopies, topMaterials] = await Promise.all([
@@ -336,9 +368,12 @@ export type MonthRow = { month: string; leads: number; checkouts: number; paid: 
 /** Leads and sales, one row per calendar month, for ranges longer than a couple of months. */
 async function monthlyRows(db: Db, r: Range): Promise<MonthRow[]> {
   const fmt = (f: string) => ({ $dateToString: { format: "%Y-%m", date: f, timezone: "Asia/Kolkata" } });
+  // People per month (an email counts once in a month, across copies and materials).
+  const peopleByMonth = async (coll: string) =>
+    db.collection(coll).aggregate([{ $match: inRange("createdAt", r) }, { $group: { _id: { m: fmt("$createdAt"), e: { $toLower: "$email" } } } }]).toArray();
   const [copy, material, orders] = await Promise.all([
-    db.collection("freedownloadleads").aggregate([{ $match: inRange("createdAt", r) }, { $group: { _id: fmt("$createdAt"), n: { $sum: 1 } } }]).toArray(),
-    db.collection("freematerialleads").aggregate([{ $match: inRange("createdAt", r) }, { $group: { _id: fmt("$createdAt"), n: { $sum: 1 } } }]).toArray(),
+    peopleByMonth("freedownloadleads"),
+    peopleByMonth("freematerialleads"),
     db.collection("orders").aggregate([{ $match: inRange("createdAt", r) }, { $group: { _id: fmt("$createdAt"), n: { $sum: 1 }, paid: { $sum: { $cond: [{ $in: ["$status", ["paid", "delivered"]] }, 1, 0] } }, revenue: { $sum: { $cond: [{ $in: ["$status", ["paid", "delivered"]] }, "$total", 0] } } } }]).toArray(),
   ]);
   const map = new Map<string, MonthRow>();
@@ -346,7 +381,13 @@ async function monthlyRows(db: Db, r: Range): Promise<MonthRow[]> {
     if (!map.has(k)) map.set(k, { month: `${MONTHS[Number(k.slice(5)) - 1]} ${k.slice(0, 4)}`, leads: 0, checkouts: 0, paid: 0, revenue: 0 });
     return map.get(k)!;
   };
-  for (const x of [...copy, ...material]) row(x._id).leads += x.n;
+  const seen = new Set<string>();
+  for (const x of [...copy, ...material]) {
+    const key = `${x._id.m}|${x._id.e}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    row(x._id.m).leads += 1;
+  }
   for (const x of orders) {
     const m = row(x._id);
     m.checkouts += x.n;
@@ -377,7 +418,7 @@ async function botStats(r: Range, withDigest: boolean) {
 
 // ---------- the report ----------
 
-const zeroStats = (): Stats => ({ visitors: 0, india: 0, views: 0, quizPlays: 0, quizPlayers: 0, leads: 0, leadsFull: 0, copyLeads: 0, materialLeads: 0, ordersStarted: 0, paid: 0, revenue: 0, left: {}, payFailures: 0, reminders: 0, jsErrors: 0, checkoutFailed: 0 });
+const zeroStats = (): Stats => ({ visitors: 0, india: 0, views: 0, quizPlays: 0, quizPlayers: 0, leads: 0, leadsFull: 0, copyLeads: 0, materialLeads: 0, requests: 0, formLeads: 0, formFull: 0, ordersStarted: 0, paid: 0, revenue: 0, left: {}, payFailures: 0, reminders: 0, jsErrors: 0, checkoutFailed: 0 });
 
 export type ReportData = {
   kind: Kind;
@@ -411,7 +452,7 @@ function flagsFor(spec: Spec, c: Stats, p: Stats, comparable: boolean): string[]
   const out: string[] = [];
   const unit = spec.kind === "day" || spec.kind === "today" ? "day" : spec.kind === "week" ? "week" : "period";
   if (spec.previous && comparable && p.views > 0 && c.views < p.views * 0.75) out.push(`Page views are down ${Math.round((1 - c.views / p.views) * 100)}% on the ${unit} before.`);
-  if (c.leads >= 10 && (c.leads - c.leadsFull) / c.leads > 0.4) out.push(`${c.leads - c.leadsFull} of ${c.leads} new leads are email only, with no answers or WhatsApp number.`);
+  if (c.formLeads >= 10 && (c.formLeads - c.formFull) / c.formLeads > 0.4) out.push(`${c.formLeads - c.formFull} of ${c.formLeads} people who asked since the new form went live left without answering the questions.`);
   if (c.ordersStarted > 0 && c.paid === 0) out.push(`${c.ordersStarted} checkout${c.ordersStarted === 1 ? "" : "s"} started and none paid.`);
   if (c.payFailures > 0) out.push(`${c.payFailures} payment${c.payFailures === 1 ? "" : "s"} failed in the payment window.`);
   if (c.jsErrors > 20) out.push(`${c.jsErrors} JavaScript errors were recorded on the site.`);
@@ -436,7 +477,7 @@ export async function collectReport(spec: Spec): Promise<ReportData> {
     leadBreakdown(db, current),
     memberTrend(),
     botStats(current, spec.kind === "day"),
-    Promise.all([db.collection("freedownloadleads").countDocuments({}), db.collection("freematerialleads").countDocuments({})]).then((x) => x[0] + x[1]),
+    Promise.all([db.collection("freedownloadleads").distinct("email"), db.collection("freematerialleads").distinct("email")]).then((x) => new Set([...x[0], ...x[1]].map((e) => String(e).toLowerCase())).size),
     (current.end.getTime() - current.start.getTime()) / DAY_MS > 62 ? monthlyRows(db, current) : Promise.resolve([] as MonthRow[]),
   ]);
   const best = series.visitors.reduce((bi, v, i, a) => (v > a[bi] ? i : bi), 0);

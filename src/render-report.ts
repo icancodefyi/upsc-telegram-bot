@@ -197,9 +197,9 @@ export function renderHtml(d: ReportData): string {
     <img src="${gilu(pose)}" alt="">
   </div>
   <div class="tiles">
-    ${tile("Visitors", num(c.visitors), dT(c.visitors, p.visitors), `${num(c.views)} page views`)}
-    ${tile("Visitors from India", num(c.india), dT(c.india, p.india), c.visitors ? `${Math.round((c.india / c.visitors) * 100)}% of all` : "")}
-    ${tile("New leads", num(c.leads), dDB(c.leads, p.leads), `${num(answered)} with full answers`)}
+    ${tile(trackedLate ? `Visitors since ${dayLabel(d.trackedFrom!)}` : "Visitors", num(c.visitors), dT(c.visitors, p.visitors), `${num(c.views)} page views`)}
+    ${tile(trackedLate ? `From India since ${dayLabel(d.trackedFrom!)}` : "Visitors from India", num(c.india), dT(c.india, p.india), c.visitors ? `${Math.round((c.india / c.visitors) * 100)}% of all` : "")}
+    ${tile("People who asked", num(c.leads), dDB(c.leads, p.leads), `${num(c.requests)} requests in all`)}
     ${tile("Revenue", rupees(c.revenue), dDB(c.revenue, p.revenue), `${num(c.paid)} paid · ${num(c.ordersStarted)} started`)}
   </div>
   <section class="watch"><h3>Worth a look</h3>${d.flags.length ? `<ul>${d.flags.map((f) => `<li>${esc(f)}</li>`).join("")}</ul>` : `<p style="margin-top:6px;font-size:12px">Nothing unusual this ${periodWord}.</p>`}</section>
@@ -219,12 +219,12 @@ export function renderHtml(d: ReportData): string {
   const p3 = `
   ${big ? head("Free requests") : ""}
   <div class="tiles" style="grid-template-columns:repeat(4,1fr)">
-    ${tile("New leads", num(c.leads), dDB(c.leads, p.leads))}
-    ${tile("With full answers", num(answered), "", answered && c.leads ? `${Math.round((answered / c.leads) * 100)}% of leads` : "")}
-    ${tile("Answer copies", num(c.copyLeads), dDB(c.copyLeads, p.copyLeads))}
-    ${tile("Free materials", num(c.materialLeads), dDB(c.materialLeads, p.materialLeads))}
+    ${tile("People who asked", num(c.leads), dDB(c.leads, p.leads), `${num(c.requests)} requests`)}
+    ${tile("Answered the questions", num(answered), "", c.formLeads ? `of ${num(c.formLeads)} asked since the form` : "form not live then")}
+    ${tile("Asked for copies", num(c.copyLeads), dDB(c.copyLeads, p.copyLeads), "different people")}
+    ${tile("Asked for materials", num(c.materialLeads), dDB(c.materialLeads, p.materialLeads), "different people")}
   </div>
-  ${card("Leads over time", bars(d.series.leadsFull, d.series.labels, { stack: d.series.leadsEmail, height: 150, every: hourly ? 3 : undefined }) + `<div class="legend"><span><i class="dot" style="background:${C.accent}"></i>With full answers</span><span><i class="dot" style="background:${C.accentLight}"></i>Email only</span></div>`)}
+  ${card("Requests over time", bars(d.series.leadsFull, d.series.labels, { stack: d.series.leadsEmail, height: 150, every: hourly ? 3 : undefined }) + `<div class="legend"><span><i class="dot" style="background:${C.accent}"></i>With full answers</span><span><i class="dot" style="background:${C.accentLight}"></i>Email only</span></div>`)}
   <div class="grid2" style="margin-bottom:14px">
     ${card("Where are they in their preparation?", hbars(who.stage, { width: 24, empty: "No answered leads in this period." }))}
     ${card("Which attempt?", hbars(who.attempt, { width: 24, empty: "No answered leads in this period." }))}
@@ -237,7 +237,7 @@ export function renderHtml(d: ReportData): string {
     ${card("Most requested answer copies", hbars(who.topCopies, { width: 28, empty: "None in this period." }))}
     ${card("Most requested free materials", hbars(who.topMaterials, { width: 28, empty: "None in this period." }))}
   </div>
-  ${d.kind === "month" || d.kind === "all" ? `<p class="note" style="margin-top:10px">All leads to date: ${num(d.leadsToDate)}</p>` : ""}
+  ${d.kind === "month" || d.kind === "all" ? `<p class="note" style="margin-top:10px">Different people who have asked for anything, to date: ${num(d.leadsToDate)}</p>` : ""}
   `;
 
   // ---- page 4: sales and everything else
@@ -255,7 +255,7 @@ export function renderHtml(d: ReportData): string {
     ${card("Why people left checkout", hbars(reasons, { width: 26, empty: "Nobody has told us yet." }), leftTotal ? `${leftTotal} answered from the reminder email` : "From the one-tap answers in the reminder email")}
   </div>
   ${d.kind === "month" ? card("By week", table(["Period", "Page views", "Leads", "Checkouts", "Paid"], weekRows(d))) : ""}
-  ${d.months.length > 1 ? card("By month", table(["Month", "Leads", "Checkouts", "Paid", "Revenue"], d.months.map((m) => [esc(m.month), num(m.leads), num(m.checkouts), num(m.paid), rupees(m.revenue)]))) : ""}
+  ${d.months.length > 1 ? card("By month", table(["Month", "People who asked", "Checkouts", "Paid", "Revenue"], d.months.map((m) => [esc(m.month), num(m.leads), num(m.checkouts), num(m.paid), rupees(m.revenue)]))) : ""}
   <div class="grid2" style="margin-bottom:14px">
     ${card("Daily quiz", `<div class="kv"><div><span>Quizzes finished</span><span>${num(c.quizPlays)} ${dT(c.quizPlays, p.quizPlays)}</span></div><div><span>Different players</span><span>${num(c.quizPlayers)} ${dT(c.quizPlayers, p.quizPlayers)}</span></div></div>`)}
     ${card("Telegram channel", `<div class="kv">
